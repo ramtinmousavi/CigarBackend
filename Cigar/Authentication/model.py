@@ -32,6 +32,10 @@ class User (db.Model, UserMixin):
     def check_password (self, password):
         return check_password_hash (self.pass_hash,password)
 
+    @staticmethod
+    def query_by_email (email):
+        return User.query.filter_by (email = email).first()
+
     def serialize_one (self):
         return UserSchema().dump(self).data
 
