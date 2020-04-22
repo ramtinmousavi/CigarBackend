@@ -17,10 +17,10 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User_Model.query.get(user_id)
+    return User.query.get(user_id)
 
-from Billboard.Authentication.model import User
-from Billboard.Authentication.controller import authentication
+from Cigar.Authentication.model import User
+from Cigar.Authentication.controller import authentication
 #import all controllers
 
 #register their blueprint
