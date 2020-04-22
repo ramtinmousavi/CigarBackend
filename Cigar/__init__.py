@@ -19,7 +19,9 @@ login_manager.init_app(app)
 def load_user(user_id):
     return User_Model.query.get(user_id)
 
-#import user User_Model
+from Billboard.Authentication.model import User
+from Billboard.Authentication.controller import authentication
 #import all controllers
 
 #register their blueprint
+app.register_blueprint(authentication)
