@@ -1,11 +1,12 @@
 from Cigar import DataBase as db
 
 from flask_login import UserMixin
-from werkzeug import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from Cigar import MarshMallow as ma
 from flask_marshmallow import Marshmallow
 
+from sqlalchemy.orm import validates
 
 class User (db.Model, UserMixin):
     __tablename__ = 'user_model'
@@ -46,4 +47,4 @@ class User (db.Model, UserMixin):
 class UserSchema (ma.ModelSchema):
     class Meta:
         model = User
-        exclude = ('pass_hash')
+        exclude = ('pass_hash',)
