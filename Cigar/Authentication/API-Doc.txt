@@ -10,6 +10,8 @@ Signup API:
 
 		status:			"OK" if no problem,
 						    "method is not POST" if method is not POST
+								"user already exists" if user with this email exists
+								"wrong email format" if email format is incorrect
 
 		serialized_user (example):	{"id": 2,
                     						"email": "ramtin@ymail.com",
