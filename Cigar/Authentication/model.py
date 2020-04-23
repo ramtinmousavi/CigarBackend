@@ -7,6 +7,7 @@ from Cigar import MarshMallow as ma
 from flask_marshmallow import Marshmallow
 
 from sqlalchemy.orm import validates
+import re
 
 class User (db.Model, UserMixin):
     __tablename__ = 'user_model'
@@ -14,12 +15,12 @@ class User (db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name =  db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(50), unique=True , nullable = False)
-    pass_hash = db.Column(db.String(54))
+    pass_hash = db.Column(db.Text)
 
     @validates ('email')
     def validate_email (self, key, value):
-        #assert email bad format
-        pass
+        assert (re.search ('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', value))
+        return value
 
     def __init__ (self, name, email, password):
         self.name = name
