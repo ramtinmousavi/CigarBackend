@@ -38,11 +38,11 @@ class User (db.Model, UserMixin):
         return User.query.filter_by (email = email).first()
 
     def serialize_one (self):
-        return UserSchema().dump(self).data
+        return UserSchema().dump(self)
 
     @staticmethod
     def serialize_many (arg):
-        return UserSchema(many=True).dump(arg).data
+        return UserSchema(many=True).dump(arg)
 
 class UserSchema (ma.ModelSchema):
     class Meta:
