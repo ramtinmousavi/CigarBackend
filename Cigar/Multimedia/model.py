@@ -155,14 +155,12 @@ class Motivation (db.Model):
     id = db.Column(db.Integer, primary_key = True)
     title = db.Column (db.String(40), nullable = False)
     description = db.Column (db.Text , nullable = False)
-    url = db.Column (db.Text , nullable = False)
     category_id = db.Column(db.Integer, db.ForeignKey('category_model.id'))
     timestamp = db.Column (db.DateTime)
 
-    def __init__ (self, title, description, url, category_id):
+    def __init__ (self, title, description, category_id):
         self.title = title
         self.description = description
-        self.url = url
         self.timestamp = datetime.now()
 
         Category.query.get (category_id).append_media (self, 'motivation')
