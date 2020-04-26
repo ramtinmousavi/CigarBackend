@@ -32,9 +32,7 @@ def get_media (mediaType=None):
             return jsonify (output)
     #show all multimedias
     else:
-        motivations = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.viewed_motivations]))
-        output = {'motivations':Motivation.serialize_many(motivations) ,
-                    'podcasts':Podcast.serialize_many(Podcast.query.all()),
+        output = {'podcasts':Podcast.serialize_many(Podcast.query.all()),
                     'books':Book.serialize_many(Book.query.all()),
                     'videos':Video.serialize_many(Video.query.all()),
                     'status':'OK'}
@@ -46,14 +44,8 @@ multimedia.add_url_rule('/api/getMedia/<int:mediaType>' , view_func = get_media)
 @login_required
 def get_motivation (count = 10):
     user = User.query.get (session['user_id'])
-
-    all_motivations = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.viewed_motivations]))
-    selected_motivations = []
-    random_range = random.sample (range(all_motivations.count()), 10)
-    for idx in random_range:
-        selected_motivations.append (all_motivations[idx])
-
-    output = {'motivations':Motivation.serialize_many(selected_motivations), 'status':'OK'}
+    motivations = user.get_to_show_motivations()
+    output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
     return jsonify (output)
 
 multimedia.add_url_rule('/api/getMotivation/<int:count>' , view_func = get_motivation)
