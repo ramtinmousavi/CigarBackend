@@ -12,8 +12,20 @@ from sqlalchemy.orm import validates
 import re
 
 
-#many to many relationship between users and motivations
-user_motivation_table = db.Table ('user_motivation_table',
+#many to many relationship between users and visited motivations
+user_visited_motivation_table = db.Table ('user_visited_motivation_table',
+db.Column('user_id', db.Integer, db.ForeignKey('motivation_model.id')),
+db.Column('motivation_id', db.Integer, db.ForeignKey('user_model.id'))
+)
+
+#many to many relationship between users and reserve motivations
+user_reserve_motivation_table = db.Table ('user_reserve_motivation_table',
+db.Column('user_id', db.Integer, db.ForeignKey('motivation_model.id')),
+db.Column('motivation_id', db.Integer, db.ForeignKey('user_model.id'))
+)
+
+#many to many relationship between users and current motivations
+user_to_show_motivation_table = db.Table ('user_to_show_motivation_table',
 db.Column('user_id', db.Integer, db.ForeignKey('motivation_model.id')),
 db.Column('motivation_id', db.Integer, db.ForeignKey('user_model.id'))
 )
@@ -26,7 +38,10 @@ class User (db.Model, UserMixin):
     name =  db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(50), unique=True , nullable = False)
     pass_hash = db.Column(db.Text)
-    viewed_motivations = db.relationship("Motivation", secondary = user_motivation_table)
+    visited_motivations = db.relationship("Motivation", secondary = user_visited_motivation_table)
+    reserve_motivations = db.relationship("Motivation", secondary = user_reserve_motivation_table)
+    to_show_motivations = db.relationship("Motivation", secondary = user_to_show_motivation_table)
+
 
 
     @validates ('email')
@@ -46,9 +61,43 @@ class User (db.Model, UserMixin):
         db.session.add (self)
         db.session.commit()
 
-    def append_viewed_motivation (self, motivation):
-        self.viewed_motivations.append (motivation)
+    def append_viewed_motivations (self, motivation):
+        self.visited_motivations.extend (motivation)
         db.session.commit()
+
+    def append_reserve_motivations (self, motivation):
+        self.reserve_motivations.append (motivation)
+        db.session.commit()
+
+    def remove_reserve_motivations(self):
+        self.reserve_motivations = []
+        db.session.commit()
+
+    def get_to_show_motivations (self, count = None):
+        return (self.to_show_motivations)
+
+    @staticmethod
+    def update_reserve_motivations ():
+        for user in User.query.all():
+            all_motivations = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]))
+            try:
+                random_range = random.sample (range(all_motivations.count()), 10)
+                self.remove_reserve_motivations()
+                selected_motivations = []
+                for idx in random_range:
+                    user.append_reserve_motivations (all_motivations[idx])
+            except ValueError:
+                pass
+
+    @staticmethod
+    def update_to_show_motivations ():
+        for user in User.query.all():
+            user.append_viewed_motivations (user.to_show_motivations)
+            user.to_show_motivations = user.reserve_motivations
+        db.session.commit()
+            #commit for each user or commit all ???!!!
+
+
 
     @staticmethod
     def query_by_email (email):
