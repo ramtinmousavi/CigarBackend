@@ -169,6 +169,15 @@ class Motivation (db.Model):
         db.session.add (self)
         db.session.commit()
 
+    def edit (self, title, description):
+        self.title = title
+        self.description = description
+        db.session.commit()
+
+    def delete (self):
+        db.session.delete (self)
+        db.session.commit()
+
     def serialize_one (self):
         return MotivationSchema().dump(self)
 
