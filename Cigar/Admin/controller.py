@@ -134,7 +134,7 @@ def add_video (categoryId):
         title = req['title']
         description = req['description']
         url = req['url']
-        new_video = Video (title, description, utrl, int(categoryId))
+        new_video = Video (title, description, url, int(categoryId))
         new_video.save()
 
         output = {'video':new_video.serialize_one(), 'status':'OK'}
@@ -224,14 +224,14 @@ admin.add_url_rule('/api/getAllVideos/' , view_func = get_all_videos)
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['book'])
-def add_book (bookId):
+def add_book (categoryId):
     if request.method == 'POST':
         req = request.get_json(force = True)
 
         title = req['title']
         description = req['description']
         url = req['url']
-        new_book = Book (title, description, utrl, int(categoryId))
+        new_book = Book (title, description, url, int(categoryId))
         new_book.save()
 
         output = {'book':new_book.serialize_one(), 'status':'OK'}
@@ -315,3 +315,100 @@ def get_all_books ():
     output = {'books': Book.serialize_many(books), 'status':'OK'}
 
 admin.add_url_rule('/api/getAllBooks/' , view_func = get_all_books)
+
+#------------------------------------------------------#
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['podcast'])
+def add_podcast (categoryId):
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+
+        title = req['title']
+        description = req['description']
+        url = req['url']
+        new_podcast = Podcast (title, description, url, int(categoryId))
+        new_podcast.save()
+
+        output = {'podcast':new_podcast.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'podcast':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/addPodcast/<int:categoryId>' , view_func = add_podcast, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['podcast'])
+def edit_podcast (podcastId):
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+
+        current_podcast = Podcast.query.get (int(podcastId))
+        if (current_podcast is not None):
+
+            title = req['title']
+            description = req['description']
+            url = req ['url']
+            current_podcast.edit (title, description, url)
+
+            output = {'podcast':current_podcast.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'podcast':'', 'status':'podcast id is wrong'}
+        return jsonify (output)
+
+    output = {'podcast':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/editPodcast/<int:podcastId>' , view_func = edit_podcast, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required ([])
+def delete_podcast (podcastId):
+
+    current_podcast = Podcast.query.get (int(podcastId))
+    if (current_podcast is not None):
+        current_podcast.delete()
+        output = {'status':'OK'}
+        return jsonify (output)
+
+    output = {'status':'podcast id is wrong'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/deletePodcast/<int:podcastId>' , view_func = delete_podcast)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['podcast'])
+def get_podcast (podcastId):
+
+    current_podcast = Podcast.query.get (int(podcastId))
+    if (current_podcast is not None):
+
+        output = {'podcast':current_podcast.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'podcast':'', 'status':'podcast id is wrong'}
+    return jsonify (output)
+
+
+admin.add_url_rule('/api/getPodcast/<int:podcastId>' , view_func = get_podcast)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['podcasts'])
+def get_all_podcasts ():
+
+    podcasts = Podcast.query.all()
+
+    output = {'podcasts': Podcast.serialize_many(podcasts), 'status':'OK'}
+
+admin.add_url_rule('/api/getAllPodcasts/' , view_func = get_all_podcasts)
