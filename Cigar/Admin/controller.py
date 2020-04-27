@@ -41,13 +41,13 @@ def add_motivation (categoryId):
         new_motivation = Motivation (title, description, int(categoryId))
         new_motivation.save()
 
-        output = {'motivation':Motivation.serialize_one(new_motivation), 'status':'OK'}
+        output = {'motivation':new_motivation.serialize_one(), 'status':'OK'}
         return jsonify (output)
 
     output = {'motivation':'', 'status':'method is not POST'}
     return jsonify (output)
 
-admin.add_url_rule('/api/addMotivation/<int:categoryId>' , view_func = add_motivation)
+admin.add_url_rule('/api/addMotivation/<int:categoryId>' , view_func = add_motivation, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
@@ -64,7 +64,7 @@ def edit_motivation (motivationId):
             description = req['description']
             current_motivation.edit (title, description)
 
-            output = {'motivation':Motivation.serialize_one(current_motivation), 'status':'OK'}
+            output = {'motivation':current_motivation.serialize_one(), 'status':'OK'}
             return jsonify (output)
 
         output = {'motivation':'', 'status':'motivation id is wrong'}
@@ -73,26 +73,21 @@ def edit_motivation (motivationId):
     output = {'motivation':'', 'status':'method is not POST'}
     return jsonify (output)
 
-admin.add_url_rule('/api/editMotivation/<int:motivationId>' , view_func = edit_motivation)
+admin.add_url_rule('/api/editMotivation/<int:motivationId>' , view_func = edit_motivation, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['motivation'])
 def delete_motivation (motivationId):
-    if request.method == 'POST':
-        req = request.get_json(force = True)
 
-        current_motivation = Motivation.query.get (int(motivationId))
-        if (current_motivation is not None):
-            current_motivation.delete()
-            output = {'motivation':'', 'status':'OK'}
-            return jsonify (output)
-
-        output = {'motivation':'', 'status':'motivation id is wrong'}
+    current_motivation = Motivation.query.get (int(motivationId))
+    if (current_motivation is not None):
+        current_motivation.delete()
+        output = {'motivation':'', 'status':'OK'}
         return jsonify (output)
 
-    output = {'motivation':'', 'status':'method is not POST'}
+    output = {'motivation':'', 'status':'motivation id is wrong'}
     return jsonify (output)
 
 admin.add_url_rule('/api/deleteMotivation/<int:motivationId>' , view_func = delete_motivation)
@@ -102,19 +97,27 @@ admin.add_url_rule('/api/deleteMotivation/<int:motivationId>' , view_func = dele
 @login_required
 @Admin_Required (['motivation'])
 def get_motivation (motivationId):
-    if request.method == 'POST':
-        req = request.get_json(force = True)
 
-        current_motivation = Motivation.query.get (int(motivationId))
-        if (current_motivation is not None):
+    current_motivation = Motivation.query.get (int(motivationId))
+    if (current_motivation is not None):
 
-            output = {'motivation':Motivation.serialize_one(current_motivation), 'status':'OK'}
-            return jsonify (output)
-
-        output = {'motivation':'', 'status':'motivation id is wrong'}
+        output = {'motivation':current_motivation.serialize_one(), 'status':'OK'}
         return jsonify (output)
 
-    output = {'motivation':'', 'status':'method is not POST'}
+    output = {'motivation':'', 'status':'motivation id is wrong'}
     return jsonify (output)
 
+
 admin.add_url_rule('/api/getMotivation/<int:motivationId>' , view_func = get_motivation)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['motivations'])
+def get_all_motivations ():
+
+    motivations = Motivation.query.all()
+
+    output = {'motivations': Motivation.serialize_many(motivations), 'status':'OK'}
+
+admin.add_url_rule('/api/getAllMotivations/' , view_func = get_all_motivations)
