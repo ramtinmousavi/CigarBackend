@@ -48,6 +48,7 @@ def login():
         if (stored_user is not None) and (stored_user.check_password(password)):
             login_user(stored_user)
             session ['user_id'] = stored_user.id
+            session ['role'] = stored_user.role
 
             output = {'user': stored_user.serialize_one(), 'status':'OK'}
             return jsonify (output)
@@ -69,6 +70,7 @@ authentication.add_url_rule('/api/login' , view_func = login, methods = ['POST' 
 @login_required
 def logout():
     user_id = session.pop('user_id', None)
+    session.pop ('role', None)
     logout_user()
 
     user = User.query.get(user_id)

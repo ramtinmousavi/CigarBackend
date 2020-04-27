@@ -37,6 +37,7 @@ class User (db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name =  db.Column(db.String(50), nullable = False)
     email = db.Column(db.String(50), unique=True , nullable = False)
+    role = db.Column(db.String(10), nullable = False)   #user, admin, owner
     pass_hash = db.Column(db.Text)
     visited_motivations = db.relationship("Motivation", secondary = user_visited_motivation_table)
     reserve_motivations = db.relationship("Motivation", secondary = user_reserve_motivation_table)
@@ -49,9 +50,10 @@ class User (db.Model, UserMixin):
         assert (re.search ('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', value))
         return value
 
-    def __init__ (self, name, email, password):
+    def __init__ (self, name, email, password, role = 'user'):
         self.name = name
         self.email = email.lower()
+        self.role = role
         self.pass_hash = generate_password_hash (password)
 
     def check_password (self, password):
