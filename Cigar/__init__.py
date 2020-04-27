@@ -22,8 +22,10 @@ def load_user(user_id):
 from Cigar.Authentication.model import User
 from Cigar.Authentication.controller import authentication
 from Cigar.Multimedia.controller import multimedia
+from Cigar.Admin.controller import admin
 #import all controllers
 
 #register their blueprint
 app.register_blueprint(authentication)
 app.register_blueprint(multimedia)
+app.register_blueprint(admin)
