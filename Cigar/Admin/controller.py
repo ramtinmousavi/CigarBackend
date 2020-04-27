@@ -218,3 +218,100 @@ def get_all_videos ():
     output = {'videos': Video.serialize_many(videos), 'status':'OK'}
 
 admin.add_url_rule('/api/getAllVideos/' , view_func = get_all_videos)
+
+#------------------------------------------------------#
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['book'])
+def add_book (bookId):
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+
+        title = req['title']
+        description = req['description']
+        url = req['url']
+        new_book = Book (title, description, utrl, int(categoryId))
+        new_book.save()
+
+        output = {'book':new_book.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'book':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/addBook/<int:categoryId>' , view_func = add_book, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['book'])
+def edit_book (bookId):
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+
+        current_book = Book.query.get (int(bookId))
+        if (current_book is not None):
+
+            title = req['title']
+            description = req['description']
+            url = req ['url']
+            current_book.edit (title, description, url)
+
+            output = {'book':current_book.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'book':'', 'status':'book id is wrong'}
+        return jsonify (output)
+
+    output = {'book':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/editBook/<int:bookId>' , view_func = edit_book, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required ([])
+def delete_book (bookId):
+
+    current_book = Book.query.get (int(bookId))
+    if (current_book is not None):
+        current_book.delete()
+        output = {'status':'OK'}
+        return jsonify (output)
+
+    output = {'status':'book id is wrong'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/deleteBook/<int:bookId>' , view_func = delete_book)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['book'])
+def get_book (bookId):
+
+    current_book = Book.query.get (int(bookId))
+    if (current_book is not None):
+
+        output = {'book':current_book.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'book':'', 'status':'book id is wrong'}
+    return jsonify (output)
+
+
+admin.add_url_rule('/api/getBook/<int:bookId>' , view_func = get_book)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['books'])
+def get_all_books ():
+
+    books = Book.query.all()
+
+    output = {'books': Book.serialize_many(books), 'status':'OK'}
+
+admin.add_url_rule('/api/getAllBooks/' , view_func = get_all_books)
