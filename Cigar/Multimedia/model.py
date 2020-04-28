@@ -9,10 +9,10 @@ class Category (db.Model):
 
     id = db.Column (db.Integer, primary_key = True)
     category_name = db.Column (db.String (30) , nullable = False, unique = True)
-    videos = db.relationship ('Video' , backref = 'category_model' , lazy = True)
-    books = db.relationship ('Book' , backref = 'category_model' , lazy = True)
-    podcasts = db.relationship ('Podcast' , backref = 'category_model' , lazy = True)
-    motivations = db.relationship ('model class name' , backref = 'category_model' , lazy = True)
+    videos = db.relationship ('Video' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+    books = db.relationship ('Book' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+    podcasts = db.relationship ('Podcast' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+    motivations = db.relationship ('Motivation' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
 
     def __init__ (self, name):
         self.category_name = name
