@@ -28,6 +28,35 @@ class Admin_Required:
         wrapped_f.__name__ = f.__name__
         return wrapped_f
 
+
+@cross_origin(supports_credentials=True)
+@login_required
+def register_admin ():
+    if session['role'] == 'owner':
+        if request.method == 'POST':
+            req = request.get_json(force = True)
+
+            name = req['name']
+            email = req ['email']
+            password = req ['password']
+
+            if (User.query_by_email (email) is not None):
+                output = {'user':'', 'status':'user already exists'}
+                return jsonify (output)
+
+            new_user = User (name, email, password, role = 'admin')
+            new_user.save()
+
+            output = {'user':new_user.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+
+        output = {'user':'', 'status':'method is not POST'}
+        return jsonify (output)
+
+    output = {'user':'', 'status':'access denied'}
+    return jsonify (output)
+
 #-----------------------------------------------------------------#
 #Motivation APIs
 
