@@ -28,6 +28,8 @@ class Admin_Required:
         wrapped_f.__name__ = f.__name__
         return wrapped_f
 
+#-----------------------------------------------------------------#
+#Motivation APIs
 
 @cross_origin(supports_credentials=True)
 @login_required
@@ -119,10 +121,12 @@ def get_all_motivations ():
     motivations = Motivation.query.all()
 
     output = {'motivations': Motivation.serialize_many(motivations), 'status':'OK'}
+    return jsonify(output)
 
 admin.add_url_rule('/api/getAllMotivations/' , view_func = get_all_motivations)
 
 #------------------------------------------------------#
+#Video APIs
 
 @cross_origin(supports_credentials=True)
 @login_required
@@ -216,10 +220,12 @@ def get_all_videos ():
     videos = Video.query.all()
 
     output = {'videos': Video.serialize_many(videos), 'status':'OK'}
+    return jsonify(output)
 
 admin.add_url_rule('/api/getAllVideos/' , view_func = get_all_videos)
 
 #------------------------------------------------------#
+#Book APIs
 
 @cross_origin(supports_credentials=True)
 @login_required
@@ -313,10 +319,12 @@ def get_all_books ():
     books = Book.query.all()
 
     output = {'books': Book.serialize_many(books), 'status':'OK'}
+    return jsonify (output)
 
 admin.add_url_rule('/api/getAllBooks/' , view_func = get_all_books)
 
 #------------------------------------------------------#
+#Podcast APIs
 
 @cross_origin(supports_credentials=True)
 @login_required
@@ -410,5 +418,103 @@ def get_all_podcasts ():
     podcasts = Podcast.query.all()
 
     output = {'podcasts': Podcast.serialize_many(podcasts), 'status':'OK'}
+    return jsonify (output)
 
 admin.add_url_rule('/api/getAllPodcasts/' , view_func = get_all_podcasts)
+
+#------------------------------------------------------#
+#Category APIs
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['category'])
+def add_category ():
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+
+        name = req['name']
+
+        new_category = Category (name)
+        new_category.save()
+
+        output = {'category':new_category.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'category':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/addCategory' , view_func = add_category, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['category'])
+def edit_category (categoryId):
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+
+        current_category = Category.query.get (int(categoryId))
+        if (current_category is not None):
+
+            name = req['name']
+            current_category.edit (name)
+
+            output = {'category':current_category.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'category':'', 'status':'category id is wrong'}
+        return jsonify (output)
+
+    output = {'category':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/editCategory/<int:categoryId>' , view_func = edit_category, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required ([])
+def delete_category (categoryId):
+
+    current_category = Category.query.get (int(categoryId))
+    if (current_category is not None):
+        current_category.delete()
+        output = {'status':'OK'}
+        return jsonify (output)
+
+    output = {'status':'category id is wrong'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/deleteCategory/<int:categoryId>' , view_func = delete_category)
+
+
+#returns all medias of one category
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['category'])
+def get_category (categoryId):
+
+    current_category = Category.query.get (int(categoryId))
+    if (current_category is not None):
+
+        output = {'category':current_category.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'category':'', 'status':'category id is wrong'}
+    return jsonify (output)
+
+
+admin.add_url_rule('/api/getCategory/<int:categoryId>' , view_func = get_category)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['categories'])
+def get_all_categories ():
+
+    categories = Category.query.all()
+
+    output = {'podcasts': Category.serialize_many(categories), 'status':'OK'}
+    return jsonify(output)
+
+admin.add_url_rule('/api/getAllCategories/' , view_func = get_all_categories)
