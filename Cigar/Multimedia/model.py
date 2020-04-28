@@ -21,6 +21,14 @@ class Category (db.Model):
         db.session.add (self)
         db.session.commit()
 
+    def edit (self, name):
+        self.category_name = name
+        db.session.commit()
+
+    def delete (self):
+        db.session.delete (self)
+        db.session.commit()
+
     def append_media (self, media, media_type):
         if media_type == 'video':
             self.videos.append (media)
