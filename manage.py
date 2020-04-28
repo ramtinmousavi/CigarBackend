@@ -1,7 +1,9 @@
 import os
+from threading import Thread
 
 from Cigar import DataBase as db
 from Cigar import app
+from Cigar.Job.controller import run_schedule
 #from Instances import make_instances
 
 from flask_script import Manager, prompt_bool
@@ -26,6 +28,11 @@ def dropdb():
 @manager.command
 def run():
     app.secret_key = os.urandom(12)
+
+    t = Thread(target = run_schedule)
+    t.daemon = True
+    t.start()
+
     app.run(debug = True)
 
 
