@@ -1,9 +1,10 @@
 from flask import request, jsonify, session, Blueprint
 from flask_login import login_required, login_user, logout_user
+from flask_cors import  cross_origin
 
 from Cigar.Authentication.model import User
 
-from flask_cors import  cross_origin
+import re
 
 authentication = Blueprint('authentication', __name__)
 
@@ -17,18 +18,20 @@ def sign_up():
         email = req ['email']
         password = req ['password']
 
-        if (User.query_by_email (email) is not None):
-            output = {'user':'', 'status':'user already exists'}
-            return jsonify (output)
-        try:
+        if (re.search ('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', value)):
+
+            if (User.query_by_email (email) is not None):
+                output = {'user':'', 'status':'user already exists'}
+                return jsonify (output)
+
             new_user = User (name, email, password)
             new_user.save()
-        except AssertionError:
-            output = {'user':'', 'status':'wrong email format'}
+
+            output = {'user':new_user.serialize_one(), 'status':'OK'}
             return jsonify (output)
 
-        output = {'user':new_user.serialize_one(), 'status':'OK'}
-        return jsonify (output)
+        output = {'user':'', 'status':'wrong email format'}
+        return jsonify(output)
 
     output = {'user':'', 'status':'method is not POST'}
     return jsonify (output)

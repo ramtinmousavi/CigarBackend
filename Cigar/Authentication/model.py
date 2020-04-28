@@ -9,7 +9,6 @@ from flask_marshmallow import Marshmallow
 from Cigar.Multimedia.model import Motivation
 
 from sqlalchemy.orm import validates
-import re
 
 
 #many to many relationship between users and visited motivations
@@ -43,12 +42,6 @@ class User (db.Model, UserMixin):
     reserve_motivations = db.relationship("Motivation", secondary = user_reserve_motivation_table)
     to_show_motivations = db.relationship("Motivation", secondary = user_to_show_motivation_table)
 
-
-
-    @validates ('email')
-    def validate_email (self, key, value):
-        assert (re.search ('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', value))
-        return value
 
     def __init__ (self, name, email, password, role = 'user'):
         self.name = name
