@@ -160,28 +160,24 @@ admin.add_url_rule('/api/getAllMotivations/' , view_func = get_all_motivations)
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['video'])
-def add_video (categoryId):
+def add_video ():
     if request.method == 'POST':
         req = request.get_json(force = True)
 
         title = req['title']
         description = req['description']
         url = req['url']
-        try:
-            new_video = Video (title, description, url, int(categoryId))
-            new_video.save()
 
-            output = {'video':new_video.serialize_one(), 'status':'OK'}
-            return jsonify (output)
+        new_video = Video (title, description, url)
+        new_video.save()
 
-        except AttributeError:
-            output = {'video':'', 'status':'wrong category id'}
-            return jsonify (output)
+        output = {'video':new_video.serialize_one(), 'status':'OK'}
+        return jsonify (output)
 
     output = {'motivation':'', 'status':'method is not POST'}
     return jsonify (output)
 
-admin.add_url_rule('/api/addVideo/<int:categoryId>' , view_func = add_video, methods = ['POST' , 'GET'])
+admin.add_url_rule('/api/addVideo' , view_func = add_video, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
@@ -264,28 +260,24 @@ admin.add_url_rule('/api/getAllVideos/' , view_func = get_all_videos)
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['book'])
-def add_book (categoryId):
+def add_book ():
     if request.method == 'POST':
         req = request.get_json(force = True)
 
         title = req['title']
         description = req['description']
         url = req['url']
-        try:
-            new_book = Book (title, description, url, int(categoryId))
-            new_book.save()
 
-            output = {'book':new_book.serialize_one(), 'status':'OK'}
-            return jsonify (output)
+        new_book = Book (title, description, url)
+        new_book.save()
 
-        except AttributeError:
-            output = {'book':'', 'status': 'wrong category id'}
-            return jsonify (output)
+        output = {'book':new_book.serialize_one(), 'status':'OK'}
+        return jsonify (output)
 
     output = {'book':'', 'status':'method is not POST'}
     return jsonify (output)
 
-admin.add_url_rule('/api/addBook/<int:categoryId>' , view_func = add_book, methods = ['POST' , 'GET'])
+admin.add_url_rule('/api/addBook' , view_func = add_book, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
@@ -368,28 +360,24 @@ admin.add_url_rule('/api/getAllBooks/' , view_func = get_all_books)
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['podcast'])
-def add_podcast (categoryId):
+def add_podcast ():
     if request.method == 'POST':
         req = request.get_json(force = True)
 
         title = req['title']
         description = req['description']
         url = req['url']
-        try:
-            new_podcast = Podcast (title, description, url, int(categoryId))
-            new_podcast.save()
-            output = {'podcast':new_podcast.serialize_one(), 'status':'OK'}
-            return jsonify (output)
 
-        except AttributeError:
-            output = {'podcast':'', 'status':'wrong category id'}
-            return jsonify (output)
+        new_podcast = Podcast (title, description, url)
+        new_podcast.save()
 
+        output = {'podcast':new_podcast.serialize_one(), 'status':'OK'}
+        return jsonify (output)
 
     output = {'podcast':'', 'status':'method is not POST'}
     return jsonify (output)
 
-admin.add_url_rule('/api/addPodcast/<int:categoryId>' , view_func = add_podcast, methods = ['POST' , 'GET'])
+admin.add_url_rule('/api/addPodcast' , view_func = add_podcast, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)

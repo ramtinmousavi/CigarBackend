@@ -12,16 +12,13 @@ class Video (db.Model):
     title = db.Column (db.String(40), nullable = False)
     description = db.Column (db.Text , nullable = False)
     url = db.Column (db.Text , nullable = False)
-    category_id = db.Column(db.Integer, db.ForeignKey('category_model.id'))
     timestamp = db.Column (db.DateTime)
 
-    def __init__ (self, title, description, url, category_id):
+    def __init__ (self, title, description, url):
         self.title = title
         self.description = description
         self.url = url
         self.timestamp = datetime.now()
-
-        Category.query.get (category_id).append_media (self, 'video')
 
     def save (self):
         db.session.add (self)
@@ -56,16 +53,13 @@ class Book (db.Model):
     title = db.Column (db.String(40), nullable = False)
     description = db.Column (db.Text , nullable = False)
     url = db.Column (db.Text , nullable = False)
-    category_id = db.Column(db.Integer, db.ForeignKey('category_model.id'))
     timestamp = db.Column (db.DateTime)
 
-    def __init__ (self, title, description, url, category_id):
+    def __init__ (self, title, description, url):
         self.title = title
         self.description = description
         self.url = url
         self.timestamp = datetime.now()
-
-        Category.query.get (category_id).append_media (self, 'book')
 
     def save (self):
         db.session.add (self)
@@ -100,16 +94,13 @@ class Podcast (db.Model):
     title = db.Column (db.String(40), nullable = False)
     description = db.Column (db.Text , nullable = False)
     url = db.Column (db.Text , nullable = False)
-    category_id = db.Column(db.Integer, db.ForeignKey('category_model.id'))
     timestamp = db.Column (db.DateTime)
 
-    def __init__ (self, title, description, url, category_id):
+    def __init__ (self, title, description, url):
         self.title = title
         self.description = description
         self.url = url
         self.timestamp = datetime.now()
-
-        Category.query.get (category_id).append_media (self, 'podcast')
 
     def save (self):
         db.session.add (self)
@@ -151,7 +142,7 @@ class Motivation (db.Model):
         self.description = description
         self.timestamp = datetime.now()
 
-        Category.query.get (category_id).append_media (self, 'motivation')
+        Category.query.get (category_id).append_motivation (self)
 
     def save (self):
         db.session.add (self)
@@ -183,9 +174,6 @@ class Category (db.Model):
 
     id = db.Column (db.Integer, primary_key = True)
     category_name = db.Column (db.String (30) , nullable = False, unique = True)
-    videos = db.relationship ('Video' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
-    books = db.relationship ('Book' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
-    podcasts = db.relationship ('Podcast' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
     motivations = db.relationship ('Motivation' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
 
     def __init__ (self, name):
@@ -203,19 +191,9 @@ class Category (db.Model):
         db.session.delete (self)
         db.session.commit()
 
-    def append_media (self, media, media_type):
-        if media_type == 'video':
-            self.videos.append (media)
-            db.session.commit()
-        elif media_type == 'book':
-            self.books.append (media)
-            db.session.commit()
-        elif media_type == 'podcast':
-            self.podcasts.append (media)
-            db.session.commit()
-        elif media_type == 'motivation':
-            self.motivations.append (media)
-            db.session.commit()
+    def append_motivation (self, motivation):
+        self.motivations.append (motivation)
+        db.session.commit()
 
     def serialize_one (self):
         return CategorySchema().dump(self)
