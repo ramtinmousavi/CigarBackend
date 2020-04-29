@@ -47,13 +47,31 @@ multimedia.add_url_rule('/api/getMedia' , view_func = get_media)
 
 @cross_origin(supports_credentials=True)
 @login_required
-def get_motivations (categoryId, count = 10):
+def get_motivations (subcategoryId):
     user = User.query.get (session['user_id'])
-    motivations = user.get_to_show_motivations()
-    if int (count) != 10:
-        motivations = motivations [:int(count)]
+    motivations = user.get_to_show_motivations(subcategoryId)
+
     output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
     return jsonify (output)
 
-multimedia.add_url_rule('/api/getMotivations/<int:categoryId>/<int:count>' , view_func = get_motivations)
-multimedia.add_url_rule('/api/getMotivations/<int:categoryId>' , view_func = get_motivations)
+multimedia.add_url_rule('/api/getMotivations/<int:subcategoryId>' , view_func = get_motivations)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+def get_category (categoryId = None):
+    if categoryId:
+        category = Category.query.get(int(categoryId))
+        if (category):
+            output = {'category':category.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'category':'', 'status':'wrong category id'}
+        return jsonify (output)
+
+    categories = Category.query.all()
+    output = {'category':Category.serialize_many(categories), 'status':'OK'}
+    return jsonify (output)
+
+multimedia.add_url_rule('/api/getCategory/<int:categoryId>' , view_func = get_category)
+multimedia.add_url_rule('/api/getCategory' , view_func = get_category)
