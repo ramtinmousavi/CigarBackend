@@ -68,20 +68,30 @@ class User (db.Model, UserMixin):
         db.session.commit()
 
     def get_to_show_motivations (self):
+        #categorize
         return (self.to_show_motivations)
 
     @staticmethod
     def update_reserve_motivations ():
+        all_motivations = {}
+        fault = False
         for user in User.query.all():
-            all_motivations = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]))
-            try:
-                random_range = random.sample (range(all_motivations.count()), 10)
-                user.remove_reserve_motivations()
-                selected_motivations = []
-                for idx in random_range:
-                    user.append_reserve_motivations (all_motivations[idx])
-            except ValueError:
-                pass
+            for category_id in Category.query (Category.id).all():
+                all_motivations[category_id] = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]),
+                                                                        Motivation.category_id == category_id)
+            user.remove_reserve_motivations()
+            for i in all_motivations:
+                try:
+                    random_range = random.sample (range(all_motivations[i].count()), 10)
+                    for idx in random_range:
+                        user.append_reserve_motivations (all_motivations[i][idx])
+                except ValueError:
+                    fault = True
+                    continue
+            if fault:
+                user.reserve_motivations = user.to_show_motivations
+                db.session.commit()
+
 
     @staticmethod
     def update_to_show_motivations ():
