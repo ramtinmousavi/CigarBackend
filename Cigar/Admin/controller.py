@@ -519,34 +519,4 @@ def delete_category (categoryId):
 
 admin.add_url_rule('/api/deleteCategory/<int:categoryId>' , view_func = delete_category)
 
-
-#returns all medias of one category
-@cross_origin(supports_credentials=True)
-@login_required
-@Admin_Required (['category'])
-def get_category (categoryId):
-
-    current_category = Category.query.get (int(categoryId))
-    if (current_category is not None):
-
-        output = {'category':current_category.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'category':'', 'status':'category id is wrong'}
-    return jsonify (output)
-
-
-admin.add_url_rule('/api/getCategory/<int:categoryId>' , view_func = get_category)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@Admin_Required (['categories'])
-def get_all_categories ():
-
-    categories = Category.query.all()
-
-    output = {'categories': Category.serialize_many(categories), 'status':'OK'}
-    return jsonify(output)
-
-admin.add_url_rule('/api/getAllCategories/' , view_func = get_all_categories)
+#get category , get all category
