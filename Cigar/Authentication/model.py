@@ -67,7 +67,7 @@ class User (db.Model, UserMixin):
         self.reserve_motivations = []
         db.session.commit()
 
-    def get_to_show_motivations (self, count = None):
+    def get_to_show_motivations (self):
         return (self.to_show_motivations)
 
     @staticmethod

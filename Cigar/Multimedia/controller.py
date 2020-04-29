@@ -47,7 +47,7 @@ multimedia.add_url_rule('/api/getMedia' , view_func = get_media)
 
 @cross_origin(supports_credentials=True)
 @login_required
-def get_motivations (count = 10):
+def get_motivations (categoryId, count = 10):
     user = User.query.get (session['user_id'])
     motivations = user.get_to_show_motivations()
     if int (count) != 10:
@@ -55,8 +55,8 @@ def get_motivations (count = 10):
     output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
     return jsonify (output)
 
-multimedia.add_url_rule('/api/getMotivations/<int:count>' , view_func = get_motivations)
-multimedia.add_url_rule('/api/getMotivations' , view_func = get_motivations)
+multimedia.add_url_rule('/api/getMotivations/<int:categoryId>/<int:count>' , view_func = get_motivations)
+multimedia.add_url_rule('/api/getMotivations/<int:categoryId>' , view_func = get_motivations)
 
 
 @cross_origin(supports_credentials=True)
