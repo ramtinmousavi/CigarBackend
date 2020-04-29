@@ -2,31 +2,30 @@ from Cigar import DataBase as db
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+import random
 
 from Cigar import MarshMallow as ma
 from flask_marshmallow import Marshmallow
 
 from Cigar.Multimedia.model import Motivation
 
-from sqlalchemy.orm import validates
-
 
 #many to many relationship between users and visited motivations
 user_visited_motivation_table = db.Table ('user_visited_motivation_table',
-db.Column('user_id', db.Integer, db.ForeignKey('motivation_model.id')),
-db.Column('motivation_id', db.Integer, db.ForeignKey('user_model.id'))
+db.Column('user_id', db.Integer, db.ForeignKey('user_model.id')),
+db.Column('motivation_id', db.Integer, db.ForeignKey('motivation_model.id'))
 )
 
 #many to many relationship between users and reserve motivations
 user_reserve_motivation_table = db.Table ('user_reserve_motivation_table',
-db.Column('user_id', db.Integer, db.ForeignKey('motivation_model.id')),
-db.Column('motivation_id', db.Integer, db.ForeignKey('user_model.id'))
+db.Column('user_id', db.Integer, db.ForeignKey('user_model.id')),
+db.Column('motivation_id', db.Integer, db.ForeignKey('motivation_model.id'))
 )
 
 #many to many relationship between users and current motivations
 user_to_show_motivation_table = db.Table ('user_to_show_motivation_table',
-db.Column('user_id', db.Integer, db.ForeignKey('motivation_model.id')),
-db.Column('motivation_id', db.Integer, db.ForeignKey('user_model.id'))
+db.Column('user_id', db.Integer, db.ForeignKey('user_model.id')),
+db.Column('motivation_id', db.Integer, db.ForeignKey('motivation_model.id'))
 )
 
 
@@ -77,7 +76,7 @@ class User (db.Model, UserMixin):
             all_motivations = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]))
             try:
                 random_range = random.sample (range(all_motivations.count()), 10)
-                self.remove_reserve_motivations()
+                user.remove_reserve_motivations()
                 selected_motivations = []
                 for idx in random_range:
                     user.append_reserve_motivations (all_motivations[idx])
@@ -108,4 +107,4 @@ class User (db.Model, UserMixin):
 class UserSchema (ma.ModelSchema):
     class Meta:
         model = User
-        exclude = ('pass_hash',)
+        exclude = ('pass_hash', 'visited_motivations', 'reserve_motivations', 'to_show_motivations')

@@ -15,9 +15,9 @@ class Admin_Required:
 
     def __call__ (self, f):
 
-        def wrapped_f ():
-            if session ['role'] == 'admin':
-                return f()
+        def wrapped_f (*args, **kwargs):
+            if (session ['role'] == 'admin') or (session['role'] == 'owner'):
+                return f(*args, **kwargs)
             else:
                 out = {}
                 for param in self.params :
@@ -167,11 +167,16 @@ def add_video (categoryId):
         title = req['title']
         description = req['description']
         url = req['url']
-        new_video = Video (title, description, url, int(categoryId))
-        new_video.save()
+        try:
+            new_video = Video (title, description, url, int(categoryId))
+            new_video.save()
 
-        output = {'video':new_video.serialize_one(), 'status':'OK'}
-        return jsonify (output)
+            output = {'video':new_video.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        except AttributeError:
+            output = {'video':'', 'status':'wrong category id'}
+            return jsonify (output)
 
     output = {'motivation':'', 'status':'method is not POST'}
     return jsonify (output)
@@ -226,7 +231,7 @@ admin.add_url_rule('/api/deleteVideo/<int:videoId>' , view_func = delete_video)
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['video'])
-def get_motivation (videoId):
+def get_video (videoId):
 
     current_video = Video.query.get (int(videoId))
     if (current_video is not None):
@@ -266,11 +271,16 @@ def add_book (categoryId):
         title = req['title']
         description = req['description']
         url = req['url']
-        new_book = Book (title, description, url, int(categoryId))
-        new_book.save()
+        try:
+            new_book = Book (title, description, url, int(categoryId))
+            new_book.save()
 
-        output = {'book':new_book.serialize_one(), 'status':'OK'}
-        return jsonify (output)
+            output = {'book':new_book.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        except AttributeError:
+            output = {'book':'', 'status': 'wrong category id'}
+            return jsonify (output)
 
     output = {'book':'', 'status':'method is not POST'}
     return jsonify (output)
@@ -365,11 +375,16 @@ def add_podcast (categoryId):
         title = req['title']
         description = req['description']
         url = req['url']
-        new_podcast = Podcast (title, description, url, int(categoryId))
-        new_podcast.save()
+        try:
+            new_podcast = Podcast (title, description, url, int(categoryId))
+            new_podcast.save()
+            output = {'podcast':new_podcast.serialize_one(), 'status':'OK'}
+            return jsonify (output)
 
-        output = {'podcast':new_podcast.serialize_one(), 'status':'OK'}
-        return jsonify (output)
+        except AttributeError:
+            output = {'podcast':'', 'status':'wrong category id'}
+            return jsonify (output)
+
 
     output = {'podcast':'', 'status':'method is not POST'}
     return jsonify (output)
@@ -543,7 +558,7 @@ def get_all_categories ():
 
     categories = Category.query.all()
 
-    output = {'podcasts': Category.serialize_many(categories), 'status':'OK'}
+    output = {'categories': Category.serialize_many(categories), 'status':'OK'}
     return jsonify(output)
 
 admin.add_url_rule('/api/getAllCategories/' , view_func = get_all_categories)

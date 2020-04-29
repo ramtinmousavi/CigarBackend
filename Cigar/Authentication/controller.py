@@ -18,7 +18,7 @@ def sign_up():
         email = req ['email']
         password = req ['password']
 
-        if (re.search ('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', value)):
+        if (re.search ('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', email)):
 
             if (User.query_by_email (email) is not None):
                 output = {'user':'', 'status':'user already exists'}

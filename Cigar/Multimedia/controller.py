@@ -41,6 +41,8 @@ def get_media (mediaType=None):
         return jsonify (output)
 
 multimedia.add_url_rule('/api/getMedia/<int:mediaType>' , view_func = get_media)
+multimedia.add_url_rule('/api/getMedia' , view_func = get_media)
+
 
 
 @cross_origin(supports_credentials=True)
@@ -83,3 +85,4 @@ def get_media_by_category(categoryId, mediaType=None):
     return jsonify (output)
 
 multimedia.add_url_rule('/api/getMediaByCategory/<int:categoryId>/<int:mediaType>' , view_func = get_media_by_category)
+multimedia.add_url_rule('/api/getMediaByCategory/<int:categoryId>' , view_func = get_media_by_category)

@@ -4,56 +4,6 @@ from flask_marshmallow import Marshmallow
 
 from datetime import datetime, timedelta
 
-class Category (db.Model):
-    __tablename__ = 'category_model'
-
-    id = db.Column (db.Integer, primary_key = True)
-    category_name = db.Column (db.String (30) , nullable = False, unique = True)
-    videos = db.relationship ('Video' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
-    books = db.relationship ('Book' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
-    podcasts = db.relationship ('Podcast' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
-    motivations = db.relationship ('Motivation' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
-
-    def __init__ (self, name):
-        self.category_name = name
-
-    def save (self):
-        db.session.add (self)
-        db.session.commit()
-
-    def edit (self, name):
-        self.category_name = name
-        db.session.commit()
-
-    def delete (self):
-        db.session.delete (self)
-        db.session.commit()
-
-    def append_media (self, media, media_type):
-        if media_type == 'video':
-            self.videos.append (media)
-            db.session.commit()
-        elif media_type == 'book':
-            self.books.append (media)
-            db.session.commit()
-        elif media_type == 'podcast':
-            self.podcasts.append (media)
-            db.session.commit()
-        elif media_type == 'motivation':
-            self.motivations.append (media)
-            db.session.commit()
-
-    def serialize_one (self):
-        return CategorySchema().dump(self)
-
-    @staticmethod
-    def serialize_many (arg):
-        return CategorySchema(many=True).dump(arg)
-
-class CategorySchema (ma.ModelSchema):
-    class Meta:
-        model = Category
-
 
 class Video (db.Model):
     __tablename__ = 'video_model'
@@ -226,3 +176,54 @@ class Motivation (db.Model):
 class MotivationSchema (ma.ModelSchema):
     class Meta:
         model = Motivation
+
+
+class Category (db.Model):
+    __tablename__ = 'category_model'
+
+    id = db.Column (db.Integer, primary_key = True)
+    category_name = db.Column (db.String (30) , nullable = False, unique = True)
+    videos = db.relationship ('Video' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+    books = db.relationship ('Book' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+    podcasts = db.relationship ('Podcast' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+    motivations = db.relationship ('Motivation' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+
+    def __init__ (self, name):
+        self.category_name = name
+
+    def save (self):
+        db.session.add (self)
+        db.session.commit()
+
+    def edit (self, name):
+        self.category_name = name
+        db.session.commit()
+
+    def delete (self):
+        db.session.delete (self)
+        db.session.commit()
+
+    def append_media (self, media, media_type):
+        if media_type == 'video':
+            self.videos.append (media)
+            db.session.commit()
+        elif media_type == 'book':
+            self.books.append (media)
+            db.session.commit()
+        elif media_type == 'podcast':
+            self.podcasts.append (media)
+            db.session.commit()
+        elif media_type == 'motivation':
+            self.motivations.append (media)
+            db.session.commit()
+
+    def serialize_one (self):
+        return CategorySchema().dump(self)
+
+    @staticmethod
+    def serialize_many (arg):
+        return CategorySchema(many=True).dump(arg)
+
+class CategorySchema (ma.ModelSchema):
+    class Meta:
+        model = Category
