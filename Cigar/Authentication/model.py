@@ -55,6 +55,10 @@ class User (db.Model, UserMixin):
         db.session.add (self)
         db.session.commit()
 
+    @staticmethod
+    def query_by_email (email):
+        return User.query.filter_by (email = email).first()
+
     def append_viewed_motivations (self, motivation):
         self.visited_motivations.extend (motivation)
         db.session.commit()
@@ -67,22 +71,25 @@ class User (db.Model, UserMixin):
         self.reserve_motivations = []
         db.session.commit()
 
-    def get_to_show_motivations (self):
-        #categorize
-        return (self.to_show_motivations)
+    def get_to_show_motivations (self, subcategoryId):
+        to_show_motivations = []
+        for motivation in self.to_show_motivations:
+            if motivation.subcategory_id == subcategoryId:
+                to_show_motivations.append(motivation)
+        return (to_show_motivations)
 
     @staticmethod
     def update_reserve_motivations ():
         all_motivations = {}
         fault = False
         for user in User.query.all():
-            for category_id in Category.query (Category.id).all():
-                all_motivations[category_id] = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]),
-                                                                        Motivation.category_id == category_id)
+            for subcategory_id in SubCategory.query (SubCategory.id).all():
+                all_motivations[subcategory_id] = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]),
+                                                                        Motivation.subcategory_id == subcategory_id)
             user.remove_reserve_motivations()
-            for i in all_motivations:
+            for i in all_motivations:   #for each subcategory
                 try:
-                    random_range = random.sample (range(all_motivations[i].count()), 10)
+                    random_range = random.sample (range(all_motivations[i].count()), 5)
                     for idx in random_range:
                         user.append_reserve_motivations (all_motivations[i][idx])
                 except ValueError:
@@ -100,12 +107,6 @@ class User (db.Model, UserMixin):
             user.to_show_motivations = user.reserve_motivations
         db.session.commit()
             #commit for each user or commit all ???!!!
-
-
-
-    @staticmethod
-    def query_by_email (email):
-        return User.query.filter_by (email = email).first()
 
     def serialize_one (self):
         return UserSchema().dump(self)
