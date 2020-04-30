@@ -162,33 +162,36 @@ admin.add_url_rule('/api/getAllMotivations/' , view_func = get_all_motivations)
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['motivations'])
-def get_all_motivations_by_category(categoryId):
-    if (Category.query.get(int(categoryId))):
-        subcategories = SubCategory.query.filter_by (category_id = int(categoryId))
-        motivations = Motivation.query.filter (Motivation.subcategory_id.in_ (subcategories))
+def get_all_motivations_by_subcategory (subcategoryId):
+    if (SubCategory.query.get (int(subcategoryId))):
+        motivations = Motivation.query.filter_by (subcategory_id = int(subcategoryId))
 
-        output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
-        return jsonify (output)
+        output = {'motivation':Motivation.serialize_many (motivations), 'status':'OK'}
+        return jsonify(output)
 
-    output = {'motivations':'', 'status':'wrong category id'}
-    return jsonify (output)
+    output = {'motivations':'', 'status':'wrong subcategory id'}
+    return jsonify(output)
 
-admin.add_url_rule('/api/getAllMotivationsByCategory/' , view_func = get_all_motivations_by_category)
+admin.add_url_rule('/api/getAllMotivationsBySubcategory/<int:subcategoryId>' , view_func = get_all_motivations_by_subcategory)
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['motivations'])
-def get_all_motivations_by_subcategory(subcategoryId):
-    if (SubCategory.query.get(int(subcategoryId))):
-        motivations = Motivation.query.filter_by (subcategory_id = int(subcategoryId))
+def get_all_motivations_by_category (categoryId):
+    category = Category.query.get (int(categoryId))
+    if category:
+        motivations = []
+        for subcategory in category.subcategories:
+            motivation.extend (subcategory.motivations)
 
         output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
 
-    output = {'motivations':'', 'status':'wrong subcategory id'}
+    output = {'motivations':'', 'status':'wrong category id'}
     return jsonify (output)
 
-admin.add_url_rule('/api/getAllMotivationsBySubcategory/' , view_func = get_all_motivations_by_subcategory)
+admin.add_url_rule('/api/getAllMotivationsByCategory/<int:categoryId>' , view_func = get_all_motivations_by_category)
+
 
 #------------------------------------------------------#
 #Video APIs
@@ -554,5 +557,3 @@ def delete_category (categoryId):
     return jsonify (output)
 
 admin.add_url_rule('/api/deleteCategory/<int:categoryId>' , view_func = delete_category)
-
-#get category , get all category
