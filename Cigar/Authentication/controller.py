@@ -69,6 +69,7 @@ def login():
 
 authentication.add_url_rule('/api/login' , view_func = login, methods = ['POST' , 'GET'])
 
+
 @cross_origin (support_credentials=True)
 @login_required
 def logout():
@@ -81,3 +82,19 @@ def logout():
     return jsonify (output)
 
 authentication.add_url_rule('/api/logout' , view_func = logout)
+
+
+@cross_origin (support_credentials=True)
+@login_required
+def edit_motivation_count (count):
+    if (int(count) < 11) and (int(count) > 0):
+        user = User.query.get (session['user_id'])
+        user.edit_count (int (count))
+
+        output = {'user':user.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'user':user.serialize_one(), 'status':'wrong count'}
+    return jsonify (output)
+
+authentication.add_url_rule('/api/editMotivatinCount/<int:count>' , view_func = edit_motivation_count)
