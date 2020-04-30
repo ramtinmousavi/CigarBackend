@@ -71,6 +71,13 @@ class User (db.Model, UserMixin):
         self.reserve_motivations = []
         db.session.commit()
 
+    def feed_reserve_from_visited (self, subcategory_id):
+        visited_from_this_category = self.visited_motivations.query.filter (Motivation.subcategory_id == subcategoryId )
+        random_range = random.sample (range(self.visited_from_this_category.count()), 5)
+        for idx in random_range:
+            self.append_reserve_motivations (self.visited_from_this_category[idx])
+        db.session.commit()
+
     def get_to_show_motivations (self, subcategoryId):
         to_show_motivations = []
         for motivation in self.to_show_motivations:
@@ -93,11 +100,10 @@ class User (db.Model, UserMixin):
                     for idx in random_range:
                         user.append_reserve_motivations (all_motivations[i][idx])
                 except ValueError:
-                    fault = True
-                    continue
-            if fault:
-                user.reserve_motivations = user.to_show_motivations
-                db.session.commit()
+                    #if don't have enough non-visited msgs
+                    #then feed reserved list randomly from old visited msgs
+                    user.feed_reserve_from_visited (i) #i is current subcategory
+
 
 
     @staticmethod
