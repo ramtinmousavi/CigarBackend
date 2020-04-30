@@ -2,7 +2,6 @@ from flask import request, jsonify, session, Blueprint
 from flask_login import login_required
 from flask_cors import  cross_origin
 
-#import models from Admin or other packages
 from Cigar.Authentication.model import User
 from Cigar.Multimedia.model import Category, Book, Video, Podcast, Motivation
 
@@ -557,3 +556,27 @@ def delete_category (categoryId):
     return jsonify (output)
 
 admin.add_url_rule('/api/deleteCategory/<int:categoryId>' , view_func = delete_category)
+
+#----------------------------------------------------------------------#
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required ([])
+def asynchronous_update_reserve_list ():
+
+    User.update_reserve_motivations()
+    output = {'status':'OK'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/asyncReserveUpdate' , view_func = asynchronous_update_reserve_list)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required ([])
+def asynchronous_update_to_show_list ():
+
+    User.update_to_show_motivations()
+    output = {'status':'OK'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/asyncToShowUpdate' , view_func = asynchronous_update_to_show_list)
