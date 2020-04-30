@@ -83,6 +83,43 @@ def logout():
 
 authentication.add_url_rule('/api/logout' , view_func = logout)
 
+@cross_origin (support_credentials=True)
+@login_required
+def change_password ():
+    if request.method == 'POST':
+
+        req = request.get_json(force = True)
+        user = User.query.get (session['user_id'])
+        new_pw = req['password']
+        user.change_password (new_pw)
+
+        output = {'user':user.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'user':user.serialize_one(), 'status':'method is not POST'}
+    return jsonify (output)
+
+authentication.add_url_rule('/api/changePassword' , view_func = change_password, methods = ['POST' , 'GET'])
+
+
+@cross_origin (support_credentials=True)
+@login_required
+def rename ():
+    if request.method == 'POST':
+
+        req = request.get_json(force = True)
+        user = User.query.get (session['user_id'])
+        new_name = req['name']
+        user.rename (new_name)
+
+        output = {'user':user.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'user':user.serialize_one(), 'status':'method is not POST'}
+    return jsonify (output)
+
+authentication.add_url_rule('/api/rename' , view_func = rename, methods = ['POST' , 'GET'])
+
 
 @cross_origin (support_credentials=True)
 @login_required

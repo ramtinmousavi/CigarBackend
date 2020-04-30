@@ -57,6 +57,14 @@ class User (db.Model, UserMixin):
         db.session.add (self)
         db.session.commit()
 
+    def rename (self, new_name):
+        self.name = new_name
+        db.session.commit()
+
+    def change_password (self, pw):
+        self.pass_hash = generate_password_hash (pw)
+        db.session.commit()
+
     def edit_count (self, count):
         self.motivation_count = count
         db.session.commit()
