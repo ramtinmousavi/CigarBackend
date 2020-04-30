@@ -37,22 +37,28 @@ class User (db.Model, UserMixin):
     email = db.Column(db.String(50), unique=True , nullable = False)
     role = db.Column(db.String(10), nullable = False)   #user, admin, owner
     pass_hash = db.Column(db.Text)
+    motivation_count = db.Column (db.Integer, nullable = False)
     visited_motivations = db.relationship("Motivation", secondary = user_visited_motivation_table)
     reserve_motivations = db.relationship("Motivation", secondary = user_reserve_motivation_table)
     to_show_motivations = db.relationship("Motivation", secondary = user_to_show_motivation_table)
 
 
-    def __init__ (self, name, email, password, role = 'user'):
+    def __init__ (self, name, email, password, role = 'user', count = 5):
         self.name = name
         self.email = email.lower()
         self.role = role
         self.pass_hash = generate_password_hash (password)
+        self.motivation_count = count
 
     def check_password (self, password):
         return check_password_hash (self.pass_hash,password)
 
     def save (self):
         db.session.add (self)
+        db.session.commit()
+
+    def edit_count (self, count):
+        self.motivation_count = count
         db.session.commit()
 
     @staticmethod
@@ -73,7 +79,7 @@ class User (db.Model, UserMixin):
 
     def feed_reserve_from_visited (self, subcategory_id):
         visited_from_this_category = self.visited_motivations.query.filter (Motivation.subcategory_id == subcategoryId )
-        random_range = random.sample (range(self.visited_from_this_category.count()), 5)
+        random_range = random.sample (range(self.visited_from_this_category.count()), self.count)
         for idx in random_range:
             self.append_reserve_motivations (self.visited_from_this_category[idx])
         db.session.commit()
@@ -96,7 +102,7 @@ class User (db.Model, UserMixin):
             user.remove_reserve_motivations()
             for i in all_motivations:   #for each subcategory
                 try:
-                    random_range = random.sample (range(all_motivations[i].count()), 5)
+                    random_range = random.sample (range(all_motivations[i].count()), user.count)
                     for idx in random_range:
                         user.append_reserve_motivations (all_motivations[i][idx])
                 except ValueError:
