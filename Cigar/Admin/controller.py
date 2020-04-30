@@ -63,17 +63,21 @@ def register_admin ():
 @cross_origin(supports_credentials=True)
 @login_required
 @Admin_Required (['motivation'])
-def add_motivation (categoryId):
+def add_motivation (subcategoryId):
     if request.method == 'POST':
         req = request.get_json(force = True)
 
-        title = req['title']
-        description = req['description']
-        new_motivation = Motivation (title, description, int(categoryId))
-        new_motivation.save()
+        if (SubCategory.query.get (int(subcategoryId))):
+            title = req['title']
+            description = req['description']
+            new_motivation = Motivation (title, description, int(subcategoryId))
+            new_motivation.save()
 
-        output = {'motivation':new_motivation.serialize_one(), 'status':'OK'}
-        return jsonify (output)
+            output = {'motivation':new_motivation.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'motivation':'', 'status':'wrong subcategory id'}
+        return jsonify(output)
 
     output = {'motivation':'', 'status':'method is not POST'}
     return jsonify (output)
@@ -153,6 +157,38 @@ def get_all_motivations ():
     return jsonify(output)
 
 admin.add_url_rule('/api/getAllMotivations/' , view_func = get_all_motivations)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['motivations'])
+def get_all_motivations_by_category(categoryId):
+    if (Category.query.get(int(categoryId))):
+        subcategories = SubCategory.query.filter_by (category_id = int(categoryId))
+        motivations = Motivation.query.filter (Motivation.subcategory_id.in_ (subcategories))
+
+        output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'motivations':'', 'status':'wrong category id'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/getAllMotivationsByCategory/' , view_func = get_all_motivations_by_category)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['motivations'])
+def get_all_motivations_by_subcategory(subcategoryId):
+    if (SubCategory.query.get(int(subcategoryId))):
+        motivations = Motivation.query.filter_by (subcategory_id = int(subcategoryId))
+
+        output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
+
+    output = {'motivations':'', 'status':'wrong subcategory id'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/getAllMotivationsBySubcategory/' , view_func = get_all_motivations_by_subcategory)
 
 #------------------------------------------------------#
 #Video APIs
