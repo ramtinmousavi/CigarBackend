@@ -75,13 +75,13 @@ def add_motivation (subcategoryId):
             output = {'motivation':new_motivation.serialize_one(), 'status':'OK'}
             return jsonify (output)
 
-        output = {'motivation':'', 'status':'wrong subcategory id'}
+        output = {'motivation':'', 'status':'subcategory id is wrong'}
         return jsonify(output)
 
     output = {'motivation':'', 'status':'method is not POST'}
     return jsonify (output)
 
-admin.add_url_rule('/api/addMotivation/<int:categoryId>' , view_func = add_motivation, methods = ['POST' , 'GET'])
+admin.add_url_rule('/api/addMotivation/<int:subcategoryId>' , view_func = add_motivation, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
@@ -556,6 +556,111 @@ def delete_category (categoryId):
     return jsonify (output)
 
 admin.add_url_rule('/api/deleteCategory/<int:categoryId>' , view_func = delete_category)
+
+#----------------------------------------------------------------------#
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['subcategory'])
+def add_subcategory (categoryId):
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+        if (Category.query.get(int(categoryId))):
+
+            new_subcategory = SubCategory (req['name'], req['url'], int(subcategoryId))
+            new_subcategory.save()
+
+            output = {'subcategory':new_subcategory.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'subcategory':'', 'status': 'category id is wrong'}
+        return jsonify (output)
+
+    output {'subcategory':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/addSubcategory/<int:categoryId>' , view_func = add_subcategory, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['subcategory'])
+def edit_subcategory (subcategoryId):
+    if request.method == 'POST':
+        req = request.get_json(force = True)
+        subcategory = SubCategory.query.get (int(subcategoryId))
+
+        if subcategory:
+            name = req['name']
+            icon = req.get('icon')
+            subcategory.edit (name, icon)
+
+            output = {'subcategory':subcategory.serialize_one(), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'subcategory':'', 'status': 'subcategory id is wrong'}
+        return jsonify (output)
+
+    output {'subcategory':'', 'status':'method is not POST'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/editSubcategory/<int:categoryId>' , view_func = edit_subcategory, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required ([])
+def delete_subcategory (subcategoryId):
+
+    current_subcategory = SubCategory.query.get (int(subcategoryId))
+    if (current_subcategory is not None):
+        current_subcategory.delete()
+        output = {'status':'OK'}
+        return jsonify (output)
+
+    output = {'status':'subcategory id is wrong'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/deleteSubcategory/<int:subcategoryId>' , view_func = delete_subcategory)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['subcategory'])
+def get_subcategory(subcategoryId):
+    subcategory = SubCategory.query.get (int(subcategoryId))
+    if (subcategory is not None):
+
+        output = {'subcategory':subcategory.serialize_one(), 'status':'OK'}
+        return jsonify (output)
+
+    output = {'subcategory':'', 'status':'subcategory id is wrong'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/getSubcategory/<int:subcategoryId>' , view_func = get_subcategory)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@Admin_Required (['subcategories'])
+def get_all_subcategories (categoryId = None):
+    if categoryId:
+        category = Category.query.get(int(categoryId))
+        if category:
+            categories = category.subcategories
+            output = {'categories':Category.serialize_many (categories), 'status':'OK'}
+            return jsonify (output)
+
+        output = {'categories':'', 'status':'category id is wrong'}
+        return jsonify (output)
+
+    subcategories = SubCategory.query.all()
+    output = {'subcategories':subcategories.serialize_one(), 'status':'OK'}
+    return jsonify (output)
+
+admin.add_url_rule('/api/getAllSubcategories/<int:categoryId>' , view_func = get_all_subcategories)
+admin.add_url_rule('/api/getAllSubcategories' , view_func = get_all_subcategories)
+
 
 #----------------------------------------------------------------------#
 @cross_origin(supports_credentials=True)
