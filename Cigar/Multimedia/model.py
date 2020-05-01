@@ -188,8 +188,10 @@ class SubCategory (db.Model):
         db.session.add (self)
         db.session.commit()
 
-    def edit (self, name):
+    def edit (self, name, icon = None):
         self.name = name
+        if icon:
+            self.icon = icon
         db.session.commit()
 
     def delete (self):
