@@ -169,45 +169,6 @@ class MotivationSchema (ma.ModelSchema):
         model = Motivation
 
 
-class Category (db.Model):
-    __tablename__ = 'category_model'
-
-    id = db.Column (db.Integer, primary_key = True)
-    name = db.Column (db.String (30) , nullable = False, unique = True)
-    subcategories = db.relationship ('SubCategory' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
-
-
-    def __init__ (self, name):
-        self.name = name
-
-    def save (self):
-        db.session.add (self)
-        db.session.commit()
-
-    def edit (self, name):
-        self.name = name
-        db.session.commit()
-
-    def delete (self):
-        db.session.delete (self)
-        db.session.commit()
-
-    def append_subcategory (self, subcategory):
-        self.subcategories.append (subcategory)
-        db.session.commit()
-
-    def serialize_one (self):
-        return CategorySchema().dump(self)
-
-    @staticmethod
-    def serialize_many (arg):
-        return CategorySchema(many=True).dump(arg)
-
-class CategorySchema (ma.ModelSchema):
-    class Meta:
-        model = Category
-
-
 class SubCategory (db.Model):
     __tablename__ = 'subcategory_model'
 
@@ -249,3 +210,42 @@ class SubCategory (db.Model):
 class SubCategorySchema (ma.ModelSchema):
     class Meta:
         model = SubCategory
+
+
+class Category (db.Model):
+    __tablename__ = 'category_model'
+
+    id = db.Column (db.Integer, primary_key = True)
+    name = db.Column (db.String (30) , nullable = False, unique = True)
+    subcategories = db.relationship ('SubCategory' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
+
+
+    def __init__ (self, name):
+        self.name = name
+
+    def save (self):
+        db.session.add (self)
+        db.session.commit()
+
+    def edit (self, name):
+        self.name = name
+        db.session.commit()
+
+    def delete (self):
+        db.session.delete (self)
+        db.session.commit()
+
+    def append_subcategory (self, subcategory):
+        self.subcategories.append (subcategory)
+        db.session.commit()
+
+    def serialize_one (self):
+        return CategorySchema().dump(self)
+
+    @staticmethod
+    def serialize_many (arg):
+        return CategorySchema(many=True).dump(arg)
+
+class CategorySchema (ma.ModelSchema):
+    class Meta:
+        model = Category
