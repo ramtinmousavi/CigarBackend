@@ -125,7 +125,6 @@ class User (db.Model, UserMixin):
 
     @staticmethod
     def update_to_show_motivations ():
-        print ("INSIDE TO SHOW ###################")
         for user in User.query.all():
             user.append_viewed_motivations (user.to_show_motivations)
             user.to_show_motivations = user.reserve_motivations
@@ -142,4 +141,4 @@ class User (db.Model, UserMixin):
 class UserSchema (ma.ModelSchema):
     class Meta:
         model = User
-        exclude = ('pass_hash', 'visited_motivations', 'reserve_motivations', 'to_show_motivations')
+        exclude = ('pass_hash', 'visited_motivations', 'reserve_motivations', 'to_show_motivations', 'role')
