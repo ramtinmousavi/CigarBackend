@@ -124,7 +124,7 @@ authentication.add_url_rule('/api/rename' , view_func = rename, methods = ['POST
 @cross_origin (support_credentials=True)
 @login_required
 def edit_motivation_count (count):
-    if (int(count) < 11) and (int(count) > 0):
+    if (int(count) < 6) and (int(count) > 0):
         user = User.query.get (session['user_id'])
         user.edit_count (int (count))
 
