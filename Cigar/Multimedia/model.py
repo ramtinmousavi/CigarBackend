@@ -191,7 +191,7 @@ class SubCategory (db.Model):
     def edit (self, name, icon = None):
         self.name = name
         if icon:
-            self.icon = icon
+            self.icon_url = icon
         db.session.commit()
 
     def delete (self):

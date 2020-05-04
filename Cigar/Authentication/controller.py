@@ -134,4 +134,4 @@ def edit_motivation_count (count):
     output = {'user':user.serialize_one(), 'status':'wrong count'}
     return jsonify (output)
 
-authentication.add_url_rule('/api/editMotivatinCount/<int:count>' , view_func = edit_motivation_count)
+authentication.add_url_rule('/api/editMotivationCount/<int:count>' , view_func = edit_motivation_count)

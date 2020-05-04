@@ -3,7 +3,7 @@ from flask_login import login_required
 from flask_cors import  cross_origin
 
 from Cigar.Authentication.model import User
-from Cigar.Multimedia.model import Category, Book, Video, Podcast, Motivation
+from Cigar.Multimedia.model import Category, SubCategory, Book, Video, Podcast, Motivation
 
 admin = Blueprint('admin', __name__)
 
@@ -55,6 +55,8 @@ def register_admin ():
 
     output = {'user':'', 'status':'access denied'}
     return jsonify (output)
+
+admin.add_url_rule('/api/registerAdmin' , view_func = register_admin, methods = ['POST' , 'GET'])
 
 #-----------------------------------------------------------------#
 #Motivation APIs
@@ -567,7 +569,7 @@ def add_subcategory (categoryId):
         req = request.get_json(force = True)
         if (Category.query.get(int(categoryId))):
 
-            new_subcategory = SubCategory (req['name'], req['url'], int(subcategoryId))
+            new_subcategory = SubCategory (req['name'], req['url'], int(categoryId))
             new_subcategory.save()
 
             output = {'subcategory':new_subcategory.serialize_one(), 'status':'OK'}
@@ -576,7 +578,7 @@ def add_subcategory (categoryId):
         output = {'subcategory':'', 'status': 'category id is wrong'}
         return jsonify (output)
 
-    output {'subcategory':'', 'status':'method is not POST'}
+    output = {'subcategory':'', 'status':'method is not POST'}
     return jsonify (output)
 
 admin.add_url_rule('/api/addSubcategory/<int:categoryId>' , view_func = add_subcategory, methods = ['POST' , 'GET'])
@@ -592,7 +594,7 @@ def edit_subcategory (subcategoryId):
 
         if subcategory:
             name = req['name']
-            icon = req.get('icon')
+            icon = req.get('url')
             subcategory.edit (name, icon)
 
             output = {'subcategory':subcategory.serialize_one(), 'status':'OK'}
@@ -601,10 +603,10 @@ def edit_subcategory (subcategoryId):
         output = {'subcategory':'', 'status': 'subcategory id is wrong'}
         return jsonify (output)
 
-    output {'subcategory':'', 'status':'method is not POST'}
+    output = {'subcategory':'', 'status':'method is not POST'}
     return jsonify (output)
 
-admin.add_url_rule('/api/editSubcategory/<int:categoryId>' , view_func = edit_subcategory, methods = ['POST' , 'GET'])
+admin.add_url_rule('/api/editSubcategory/<int:subcategoryId>' , view_func = edit_subcategory, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
@@ -655,7 +657,7 @@ def get_all_subcategories (categoryId = None):
         return jsonify (output)
 
     subcategories = SubCategory.query.all()
-    output = {'subcategories':subcategories.serialize_one(), 'status':'OK'}
+    output = {'subcategories':SubCategory.serialize_many(subcategories), 'status':'OK'}
     return jsonify (output)
 
 admin.add_url_rule('/api/getAllSubcategories/<int:categoryId>' , view_func = get_all_subcategories)

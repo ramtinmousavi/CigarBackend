@@ -7,7 +7,7 @@ import random
 from Cigar import MarshMallow as ma
 from flask_marshmallow import Marshmallow
 
-from Cigar.Multimedia.model import Motivation
+from Cigar.Multimedia.model import Motivation, SubCategory
 
 
 #many to many relationship between users and visited motivations
@@ -86,10 +86,13 @@ class User (db.Model, UserMixin):
         db.session.commit()
 
     def feed_reserve_from_visited (self, subcategory_id):
-        visited_from_this_category = self.visited_motivations.query.filter (Motivation.subcategory_id == subcategoryId )
-        random_range = random.sample (range(self.visited_from_this_category.count()), self.count)
+        visited_from_this_category = []
+        for visited in self.visited_motivations:
+            if visited.subcategory_id == subcategory_id:
+                visited_from_this_category.append (visited)
+        random_range = random.sample (range(len(visited_from_this_category)), self.motivation_count)
         for idx in random_range:
-            self.append_reserve_motivations (self.visited_from_this_category[idx])
+            self.append_reserve_motivations (visited_from_this_category[idx])
         db.session.commit()
 
     def get_to_show_motivations (self, subcategoryId):
@@ -102,15 +105,15 @@ class User (db.Model, UserMixin):
     @staticmethod
     def update_reserve_motivations ():
         all_motivations = {}
-        fault = False
         for user in User.query.all():
-            for subcategory_id in SubCategory.query (SubCategory.id).all():
+            for subcategory_id, in db.session.query (SubCategory.id).all():
                 all_motivations[subcategory_id] = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]),
                                                                         Motivation.subcategory_id == subcategory_id)
             user.remove_reserve_motivations()
             for i in all_motivations:   #for each subcategory
+                #if  (all_motivations[i].count() ) > 5:
                 try:
-                    random_range = random.sample (range(all_motivations[i].count()), user.count)
+                    random_range = random.sample (range(all_motivations[i].count()), user.motivation_count)
                     for idx in random_range:
                         user.append_reserve_motivations (all_motivations[i][idx])
                 except ValueError:
@@ -122,6 +125,7 @@ class User (db.Model, UserMixin):
 
     @staticmethod
     def update_to_show_motivations ():
+        print ("INSIDE TO SHOW ###################")
         for user in User.query.all():
             user.append_viewed_motivations (user.to_show_motivations)
             user.to_show_motivations = user.reserve_motivations
