@@ -16,6 +16,7 @@ Signup API:
 		serialized_user (example):	{"id": 2,
                     						"email": "ramtin@ymail.com",
                     						"name": "ramtin",
+																"motivation_count": 4
                     						}
 
 
@@ -38,6 +39,7 @@ Login API:
 		serialized_user (example):	{"id": 2,
                     						"email": "ramtin@ymail.com",
                     						"name": "ramtin",
+																"motivation_count": 4
                     						}
 
 
@@ -55,4 +57,64 @@ Logout API:
 		serialized_user (example):	{"id": 2,
                   							"email": "ramtin@ymail.com",
                   							"name": "ramtin",
+																"motivation_count": 4
                   							}
+
+--------------------------------------------------------------------------------
+Change Password API:
+
+	url: /api/changePassword
+
+	method: POST
+
+	json request: {"password": new_password}
+
+	json response:	{"user": serialized_user, "status":status}
+
+			status:		"OK" if no problem,
+								"method is not POST" if method is not POST
+
+			serialized_user (example):	{"id": 2,
+																	"email": "ramtin@ymail.com",
+																	"name": "ramtin",
+																	"motivation_count": 4
+																	}
+--------------------------------------------------------------------------------
+Rename API:
+
+url: /api/rename
+
+method: POST
+
+json request: {"name": new_name}
+
+json response:	{"user": serialized_user, "status":status}
+
+		status:		"OK" if no problem,
+							"method is not POST" if method is not POST
+
+		serialized_user (example):	{"id": 2,
+																"email": "ramtin@ymail.com",
+																"name": "ramtin",
+																"motivation_count": 4
+																}
+--------------------------------------------------------------------------------
+Config Motivation Count API:
+
+url: /api/editMotivationCount/<int:count>
+
+		url parameters:
+		int:count		#(required) number of motivations returned in get motivation API
+
+method: GET
+
+json response:	{"user": serialized_user, "status":status}
+
+		status:		"OK" if no problem,
+							"wrong count" if <count> bigger than 5
+
+		serialized_user (example):	{"id": 2,
+																"email": "ramtin@ymail.com",
+																"name": "ramtin",
+																"motivation_count": 4
+																}
