@@ -1,0 +1,133 @@
+Get Media (Video, Book, Podcast) API:
+
+url: /api/getMedia/<int:mediaType>
+
+		url parameters:
+		int:mediaType		#(optional): in order to get specific type of media
+                    #1 for Video
+                    #2 for Book
+                    #3 for Podcast
+                    #/api/getMedia without parameter: all types of media
+
+method: GET
+
+json response for /1:	{"videos": videos, "status":"OK"}
+json response for /2:	{"books": books, "status":"OK"}
+json response for /3:	{"podcasts": podcasts, "status":"OK"}
+json response for /4 or more:	{"status":"wrong media type"}
+
+json response for /api/getMedia (without url parameter):
+                {'podcasts':serialized_podcasts),
+                'books':serialized_books),
+                'videos':serialized_videos),
+                'status':'OK'}
+
+
+		serialized_videos (example):	{
+                        "books": [
+                                    {
+                                        "description": "Book 1",
+                                        "id": 1,
+                                        "timestamp": "2020-04-30T21:18:44",
+                                        "title": "B1",
+                                        "url": "google.com"
+                                    },
+                                    {
+                                        "description": "Book 3",
+                                        "id": 3,
+                                        "timestamp": "2020-04-30T21:18:55",
+                                        "title": "B3",
+                                        "url": "google.com"
+                                    }
+                                  ],
+
+                        "podcasts": [
+                                      {
+                                          "description": "Pod 2",
+                                          "id": 2,
+                                          "timestamp": "2020-04-30T21:29:17",
+                                          "title": "P2",
+                                          "url": "google.com"
+                                      },
+                                      {
+                                          "description": "Pod 3",
+                                          "id": 3,
+                                          "timestamp": "2020-04-30T21:29:54",
+                                          "title": "P3",
+                                          "url": "google.com"
+                                      }
+                              ],
+
+                        "status": "OK",
+
+                        "videos": [
+                                    {
+                                        "description": "Video 1",
+                                        "id": 1,
+                                        "timestamp": "2020-04-30T21:12:57",
+                                        "title": "V1",
+                                        "url": "google.com"
+                                    },
+                                    {
+                                        "description": "Video 2",
+                                        "id": 2,
+                                        "timestamp": "2020-04-30T21:13:02",
+                                        "title": "V2",
+                                        "url": "google.com"
+                                    }
+                              ]
+                    }
+
+--------------------------------------------------------------------------------
+Get Motivations API:
+
+url:  /api/getMotivations/<int:subcategoryId>
+    url parameters:
+      int:subcategoryId		#(required) id of subcategory which we want to
+                            retrieve it's motivations
+
+method: GET
+
+json_response:  {'motivations':serialized_motivations, 'status':'OK'}
+
+    serialized_motivations (example):
+                              {
+                                "motivations": [
+                                        {
+                                            "description": "Cigar Nakesh!",
+                                            "id": 5,
+                                            "timestamp": "2020-05-02T15:04:48",
+                                            "title": "Cigar Sub1 Mot 5"
+                                        },
+                                        {
+                                            "description": "Cigar Nakesh!",
+                                            "id": 6,
+                                            "timestamp": "2020-05-02T15:04:51",
+                                            "title": "Cigar Sub1 Mot 6"
+                                        },
+                                        {
+                                            "description": "Cigar Nakesh!",
+                                            "id": 2,
+                                            "timestamp": "2020-05-02T15:04:38",
+                                            "title": "Cigar Sub1 Mot 2"
+                                        },
+                                        {
+                                            "description": "Cigar Nakesh!",
+                                            "id": 14,
+                                            "timestamp": "2020-05-02T15:07:19",
+                                            "title": "Cigar Sub1 Mot 14"
+                                        }
+                                      ],
+
+                                  "status": "OK"
+                              }
+
+-------------------------------------------------------------------------------
+Get Categories (And their SubCategories) API:
+
+url:  /api/getCategory/<int:categoryId>
+
+    url parameters:
+      int:categoryId		#(optional) in order to get specific category
+
+method:   GET
