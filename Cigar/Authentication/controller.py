@@ -54,7 +54,7 @@ def login():
             session ['user_id'] = stored_user.id
             session ['role'] = stored_user.role
 
-            response_generator (stored_user.serialize_one(), 200, 'ورود با موفقیت انجام شد')
+            output = response_generator (stored_user.serialize_one(), 200, 'ورود با موفقیت انجام شد')
             return jsonify (output)
 
         else:
