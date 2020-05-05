@@ -15,6 +15,13 @@ login_manager = LoginManager()
 login_manager.session_protection = "strong"
 login_manager.init_app(app)
 
+def response_generator (data, stat, msg):
+    output = {}
+    output ['data'] = data
+    output ['status'] = stat
+    output ['message'] = msg
+    return output
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
