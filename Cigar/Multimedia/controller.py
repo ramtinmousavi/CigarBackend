@@ -4,6 +4,7 @@ from flask_cors import  cross_origin
 
 from Cigar.Multimedia.model import Category, Video, Book, Podcast, Motivation
 from Cigar.Authentication.model import User
+from Cigar import response_generator
 
 import random
 
@@ -16,28 +17,29 @@ def get_media (mediaType=None):
     if mediaType:
         if int (mediaType) == 1:
             media = Video.query.all()
-            output = {'videos':Video.serialize_many(media), 'status':'OK'}
+            output = response_generator (Video.serialize_many (media), 200, 'OK')
             return jsonify (output)
 
         elif int (mediaType) == 2:
             media = Book.query.all()
-            output = {'books':Book.serialize_many(media), 'status':'OK'}
+            output = response_generator (Book.serialize_many (media), 200, 'OK')
             return jsonify (output)
 
         elif int (mediaType) == 3:
             media = Podcast.query.all()
-            output = {'podcasts':Podcast.serialize_many(media), 'status':'OK'}
+            output = response_generator (Podcast.serialize_many (media), 200, 'OK')
             return jsonify (output)
 
         else:
-            output = {'status':'wrong media type'}
+            output = response_generator (None, 406, 'wrong media type')
             return jsonify (output)
     #show all multimedias
     else:
-        output = {'podcasts':Podcast.serialize_many(Podcast.query.all()),
+        out = {'podcasts':Podcast.serialize_many(Podcast.query.all()),
                     'books':Book.serialize_many(Book.query.all()),
                     'videos':Video.serialize_many(Video.query.all()),
-                    'status':'OK'}
+                    }
+        output = response_generator (out, 200, 'OK')
         return jsonify (output)
 
 multimedia.add_url_rule('/api/getMedia/<int:mediaType>' , view_func = get_media)
@@ -51,7 +53,7 @@ def get_motivations (subcategoryId):
     user = User.query.get (session['user_id'])
     motivations = user.get_to_show_motivations(subcategoryId)
 
-    output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
+    output = response_generator (Motivation.serialize_many (motivations), 200, 'OK')
     return jsonify (output)
 
 multimedia.add_url_rule('/api/getMotivations/<int:subcategoryId>' , view_func = get_motivations)
@@ -63,14 +65,14 @@ def get_category (categoryId = None):
     if categoryId:
         category = Category.query.get(int(categoryId))
         if (category):
-            output = {'category':category.serialize_one(), 'status':'OK'}
+            output = response_generator (category.serialize_one(), 200, 'OK')
             return jsonify (output)
 
-        output = {'category':'', 'status':'wrong category id'}
+        output = response_generator (None, 406, 'wrong category id')
         return jsonify (output)
 
     categories = Category.query.all()
-    output = {'category':Category.serialize_many(categories), 'status':'OK'}
+    output = response_generator (Category.serialize_many (categories), 200, 'OK')
     return jsonify (output)
 
 multimedia.add_url_rule('/api/getCategory/<int:categoryId>' , view_func = get_category)
