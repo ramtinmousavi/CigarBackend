@@ -4,28 +4,20 @@ from flask_cors import  cross_origin
 
 from Cigar.Authentication.model import User
 from Cigar.Multimedia.model import Category, SubCategory, Book, Video, Podcast, Motivation
+from Cigar import response_generator
 
 admin = Blueprint('admin', __name__)
 
 
-class Admin_Required:
-    def __init__ (self, params):
-        self.params = params
-
-    def __call__ (self, f):
-
-        def wrapped_f (*args, **kwargs):
-            if (session ['role'] == 'admin') or (session['role'] == 'owner'):
-                return f(*args, **kwargs)
-            else:
-                out = {}
-                for param in self.params :
-                    out [param] = ''
-                out ['status'] = 'access denied'
-
-                return jsonify (out)
-        wrapped_f.__name__ = f.__name__
-        return wrapped_f
+def admin_required (func):
+    def wrapper (*args, **kwargs):
+        if (session['role'] == 'admin') or (session['role'] == 'owner'):
+            return func (*args, **kwargs)
+        else:
+            output = response_generator (None, 403, 'access denied')
+            return jsonify (output)
+    wrapper.__name__ = func.__name__
+    return wrapper
 
 
 @cross_origin(supports_credentials=True)
@@ -40,20 +32,20 @@ def register_admin ():
             password = req ['password']
 
             if (User.query_by_email (email) is not None):
-                output = {'user':'', 'status':'user already exists'}
+                output = response_generator (None, 304, 'کاربر تکراری است')
                 return jsonify (output)
 
             new_user = User (name, email, password, role = 'admin')
             new_user.save()
 
-            output = {'user':new_user.serialize_one(), 'status':'OK'}
+            output = response_generator (new_user.serialize_one(), 200, 'ثبت نام با موفقیت انجام شد')
             return jsonify (output)
 
 
-        output = {'user':'', 'status':'method is not POST'}
+        output = response_generator (None, 405, 'method is not POST')
         return jsonify (output)
 
-    output = {'user':'', 'status':'access denied'}
+    output = response_generator (None, 403, 'access denied')
     return jsonify (output)
 
 admin.add_url_rule('/api/registerAdmin' , view_func = register_admin, methods = ['POST' , 'GET'])
@@ -63,7 +55,7 @@ admin.add_url_rule('/api/registerAdmin' , view_func = register_admin, methods = 
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['motivation'])
+@admin_required
 def add_motivation (subcategoryId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -77,10 +69,10 @@ def add_motivation (subcategoryId):
             output = {'motivation':new_motivation.serialize_one(), 'status':'OK'}
             return jsonify (output)
 
-        output = {'motivation':'', 'status':'subcategory id is wrong'}
+        output = response_generator (None, 406, 'wrong subcategory id')
         return jsonify(output)
 
-    output = {'motivation':'', 'status':'method is not POST'}
+    output = response_generator (None, 405, 'method is not POST')
     return jsonify (output)
 
 admin.add_url_rule('/api/addMotivation/<int:subcategoryId>' , view_func = add_motivation, methods = ['POST' , 'GET'])
@@ -88,7 +80,7 @@ admin.add_url_rule('/api/addMotivation/<int:subcategoryId>' , view_func = add_mo
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['motivation'])
+@admin_required
 def edit_motivation (motivationId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -114,7 +106,7 @@ admin.add_url_rule('/api/editMotivation/<int:motivationId>' , view_func = edit_m
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def delete_motivation (motivationId):
 
     current_motivation = Motivation.query.get (int(motivationId))
@@ -131,7 +123,7 @@ admin.add_url_rule('/api/deleteMotivation/<int:motivationId>' , view_func = dele
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['motivation'])
+@admin_required
 def get_motivation (motivationId):
 
     current_motivation = Motivation.query.get (int(motivationId))
@@ -149,7 +141,7 @@ admin.add_url_rule('/api/getMotivation/<int:motivationId>' , view_func = get_mot
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['motivations'])
+@admin_required
 def get_all_motivations ():
 
     motivations = Motivation.query.all()
@@ -162,7 +154,7 @@ admin.add_url_rule('/api/getAllMotivations/' , view_func = get_all_motivations)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['motivations'])
+@admin_required
 def get_all_motivations_by_subcategory (subcategoryId):
     if (SubCategory.query.get (int(subcategoryId))):
         motivations = Motivation.query.filter_by (subcategory_id = int(subcategoryId))
@@ -178,7 +170,7 @@ admin.add_url_rule('/api/getAllMotivationsBySubcategory/<int:subcategoryId>' , v
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['motivations'])
+@admin_required
 def get_all_motivations_by_category (categoryId):
     category = Category.query.get (int(categoryId))
     if category:
@@ -199,7 +191,7 @@ admin.add_url_rule('/api/getAllMotivationsByCategory/<int:categoryId>' , view_fu
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['video'])
+@admin_required
 def add_video ():
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -222,7 +214,7 @@ admin.add_url_rule('/api/addVideo' , view_func = add_video, methods = ['POST' , 
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['video'])
+@admin_required
 def edit_video (videoId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -249,7 +241,7 @@ admin.add_url_rule('/api/editVideo/<int:videoId>' , view_func = edit_video, meth
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def delete_video (videoId):
 
     current_video = Video.query.get (int(videoId))
@@ -266,7 +258,7 @@ admin.add_url_rule('/api/deleteVideo/<int:videoId>' , view_func = delete_video)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['video'])
+@admin_required
 def get_video (videoId):
 
     current_video = Video.query.get (int(videoId))
@@ -284,7 +276,7 @@ admin.add_url_rule('/api/getVideo/<int:videoId>' , view_func = get_video)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['videos'])
+@admin_required
 def get_all_videos ():
 
     videos = Video.query.all()
@@ -299,7 +291,7 @@ admin.add_url_rule('/api/getAllVideos/' , view_func = get_all_videos)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['book'])
+@admin_required
 def add_book ():
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -322,7 +314,7 @@ admin.add_url_rule('/api/addBook' , view_func = add_book, methods = ['POST' , 'G
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['book'])
+@admin_required
 def edit_book (bookId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -349,7 +341,7 @@ admin.add_url_rule('/api/editBook/<int:bookId>' , view_func = edit_book, methods
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def delete_book (bookId):
 
     current_book = Book.query.get (int(bookId))
@@ -366,7 +358,7 @@ admin.add_url_rule('/api/deleteBook/<int:bookId>' , view_func = delete_book)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['book'])
+@admin_required
 def get_book (bookId):
 
     current_book = Book.query.get (int(bookId))
@@ -384,7 +376,7 @@ admin.add_url_rule('/api/getBook/<int:bookId>' , view_func = get_book)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['books'])
+@admin_required
 def get_all_books ():
 
     books = Book.query.all()
@@ -399,7 +391,7 @@ admin.add_url_rule('/api/getAllBooks/' , view_func = get_all_books)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['podcast'])
+@admin_required
 def add_podcast ():
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -422,7 +414,7 @@ admin.add_url_rule('/api/addPodcast' , view_func = add_podcast, methods = ['POST
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['podcast'])
+@admin_required
 def edit_podcast (podcastId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -449,7 +441,7 @@ admin.add_url_rule('/api/editPodcast/<int:podcastId>' , view_func = edit_podcast
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def delete_podcast (podcastId):
 
     current_podcast = Podcast.query.get (int(podcastId))
@@ -466,7 +458,7 @@ admin.add_url_rule('/api/deletePodcast/<int:podcastId>' , view_func = delete_pod
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['podcast'])
+@admin_required
 def get_podcast (podcastId):
 
     current_podcast = Podcast.query.get (int(podcastId))
@@ -484,7 +476,7 @@ admin.add_url_rule('/api/getPodcast/<int:podcastId>' , view_func = get_podcast)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['podcasts'])
+@admin_required
 def get_all_podcasts ():
 
     podcasts = Podcast.query.all()
@@ -499,7 +491,7 @@ admin.add_url_rule('/api/getAllPodcasts/' , view_func = get_all_podcasts)
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['category'])
+@admin_required
 def add_category ():
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -520,7 +512,7 @@ admin.add_url_rule('/api/addCategory' , view_func = add_category, methods = ['PO
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['category'])
+@admin_required
 def edit_category (categoryId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -545,7 +537,7 @@ admin.add_url_rule('/api/editCategory/<int:categoryId>' , view_func = edit_categ
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def delete_category (categoryId):
 
     current_category = Category.query.get (int(categoryId))
@@ -563,7 +555,7 @@ admin.add_url_rule('/api/deleteCategory/<int:categoryId>' , view_func = delete_c
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['subcategory'])
+@admin_required
 def add_subcategory (categoryId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -586,7 +578,7 @@ admin.add_url_rule('/api/addSubcategory/<int:categoryId>' , view_func = add_subc
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['subcategory'])
+@admin_required
 def edit_subcategory (subcategoryId):
     if request.method == 'POST':
         req = request.get_json(force = True)
@@ -611,7 +603,7 @@ admin.add_url_rule('/api/editSubcategory/<int:subcategoryId>' , view_func = edit
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def delete_subcategory (subcategoryId):
 
     current_subcategory = SubCategory.query.get (int(subcategoryId))
@@ -628,7 +620,7 @@ admin.add_url_rule('/api/deleteSubcategory/<int:subcategoryId>' , view_func = de
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['subcategory'])
+@admin_required
 def get_subcategory(subcategoryId):
     subcategory = SubCategory.query.get (int(subcategoryId))
     if (subcategory is not None):
@@ -644,7 +636,7 @@ admin.add_url_rule('/api/getSubcategory/<int:subcategoryId>' , view_func = get_s
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required (['subcategories'])
+@admin_required
 def get_all_subcategories (categoryId = None):
     if categoryId:
         category = Category.query.get(int(categoryId))
@@ -667,7 +659,7 @@ admin.add_url_rule('/api/getAllSubcategories' , view_func = get_all_subcategorie
 #----------------------------------------------------------------------#
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def asynchronous_update_reserve_list ():
 
     User.update_reserve_motivations()
@@ -679,7 +671,7 @@ admin.add_url_rule('/api/asyncReserveUpdate' , view_func = asynchronous_update_r
 
 @cross_origin(supports_credentials=True)
 @login_required
-@Admin_Required ([])
+@admin_required
 def asynchronous_update_to_show_list ():
 
     User.update_to_show_motivations()
