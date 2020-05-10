@@ -1,6 +1,7 @@
 from Cigar import DataBase as db
 from Cigar import MarshMallow as ma
 from flask_marshmallow import Marshmallow
+from marshmallow import fields
 
 from datetime import datetime, timedelta
 
@@ -132,15 +133,17 @@ class Motivation (db.Model):
     __tablename__ = 'motivation_model'
 
     id = db.Column(db.Integer, primary_key = True)
-    title = db.Column (db.String(40), nullable = False)
+    title = db.Column (db.String(40), nullable = True)
     description = db.Column (db.Text , nullable = False)
     subcategory_id = db.Column(db.Integer, db.ForeignKey('subcategory_model.id'))
     timestamp = db.Column (db.DateTime)
 
-    def __init__ (self, title, description, subcategory_id):
+    def __init__ (self, description, subcategory_id, title = None):
         self.title = title
         self.description = description
         self.timestamp = datetime.now()
+        if title :
+            self.title = title
 
         SubCategory.query.get (subcategory_id).append_motivation (self)
 
@@ -212,6 +215,7 @@ class SubCategory (db.Model):
 class SubCategorySchema (ma.ModelSchema):
     class Meta:
         model = SubCategory
+    motivations = fields.Nested (MotivationSchema, many = True)
 
 
 class Category (db.Model):
@@ -219,11 +223,13 @@ class Category (db.Model):
 
     id = db.Column (db.Integer, primary_key = True)
     name = db.Column (db.String (30) , nullable = False, unique = True)
+    #color = db.Column (db.String (10), nullable = False)
     subcategories = db.relationship ('SubCategory' , cascade = 'all,delete', backref = 'category_model' , lazy = True)
 
 
-    def __init__ (self, name):
+    def __init__ (self, name):#, color = '#00000000'):
         self.name = name
+        #self.color = color
 
     def save (self):
         db.session.add (self)
@@ -251,3 +257,4 @@ class Category (db.Model):
 class CategorySchema (ma.ModelSchema):
     class Meta:
         model = Category
+    subcategories = fields.Nested (SubCategorySchema, many = True)
