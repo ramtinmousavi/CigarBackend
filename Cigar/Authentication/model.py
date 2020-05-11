@@ -7,7 +7,7 @@ import random
 from Cigar import MarshMallow as ma
 from flask_marshmallow import Marshmallow
 
-from Cigar.Multimedia.model import Motivation, SubCategory
+from Cigar.Motivation.model import Motivation, SubCategory, UserMotivation
 
 
 
@@ -20,6 +20,8 @@ class User (db.Model, UserMixin):
     role = db.Column(db.String(10), nullable = False)   #user, admin, owner
     pass_hash = db.Column(db.Text)
     motivation_count = db.Column (db.Integer, nullable = False)
+    usermotivations = db.relationship ('UserMotivation' , cascade = 'all,delete', backref = 'user_model' , lazy = True)
+
 
 
     def __init__ (self, name, email, password, role = 'user', count = 5):
@@ -48,6 +50,14 @@ class User (db.Model, UserMixin):
         self.motivation_count = count
         db.session.commit()
 
+    def initialize_motivations (self):
+        for subcategory in SubCategory.query.all():
+            motivations = Motivation.query.filter_by (subcategory_id = subcategory.id)
+            random_range = random.sample (range(motivations.count()), user.motivation_count * 7)
+            for i in range (len(random_range)):
+                new_record = UserMotivation (self.id, motivations[random_range[i]].id, subcategory.id, days = i%7)
+                new_record.save()
+
     @staticmethod
     def query_by_email (email):
         return User.query.filter_by (email = email).first()
@@ -62,4 +72,4 @@ class User (db.Model, UserMixin):
 class UserSchema (ma.ModelSchema):
     class Meta:
         model = User
-        exclude = ('pass_hash', 'visited_motivations', 'reserve_motivations', 'to_show_motivations', 'role')
+        exclude = ('pass_hash', 'role')
