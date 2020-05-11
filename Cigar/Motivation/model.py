@@ -6,6 +6,40 @@ from marshmallow import fields
 from datetime import datetime, timedelta
 
 
+class UserMotivation (db.Model):
+    __tablename__ = 'usermotivation_model'
+
+    id = db.Column (db.Integer, primary_key = True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'))
+    motivation_id = db.Column(db.Integer, db.ForeignKey('motivation_model.id'))
+    subcategory_id = db.Column (db.Integer, db.ForeignKey('subcategory_model.id'))
+    timestamp = db.Column(db.DateTime, nullable=False)
+    visited  = db.Column (db.Boolean, nullable = False)
+
+    def __init__ (self, user_id, motivation_id, subcategory_id, visited = False, days = 6):
+        self.user_id = user_id
+        self.motivation_id = motivation_id
+        self.subcategory_id = subcategory_id
+        self.visited = visited
+        self.timestamp = datetime.now().date() + timedelta (days = days)
+
+    def save (self):
+        db.session.add (self)
+        db.session.commit()
+
+    def mark_visited (self):
+        self.visited = True
+        db.session.commit()
+
+
+    @staticmethod
+    def expire_yesterday ():
+        yesterday_records = UserMotivation.query.filter_by (timestamp = datetime.now().date() - timedelta (days = 1))
+        for record in yesterday_records:
+            record.mark_visited()
+
+
+
 class Motivation (db.Model):
     __tablename__ = 'motivation_model'
 
@@ -14,6 +48,7 @@ class Motivation (db.Model):
     description = db.Column (db.Text , nullable = False)
     subcategory_id = db.Column(db.Integer, db.ForeignKey('subcategory_model.id'))
     timestamp = db.Column (db.DateTime)
+    usermotivations = db.relationship ('UserMotivation' , cascade = 'all,delete', backref = 'motivation_model' , lazy = True)
 
     def __init__ (self, description, subcategory_id, title = None):
         self.title = title
@@ -21,8 +56,7 @@ class Motivation (db.Model):
         self.timestamp = datetime.now()
         if title :
             self.title = title
-
-        SubCategory.query.get (subcategory_id).append_motivation (self)
+        self.subcategory_id = subcategory_id
 
     def save (self):
         db.session.add (self)
@@ -35,6 +69,10 @@ class Motivation (db.Model):
 
     def delete (self):
         db.session.delete (self)
+        db.session.commit()
+
+    def append_usermotivation (self, usermotivation):
+        self.usermotivations.append (usermotivation)
         db.session.commit()
 
     def serialize_one (self):
@@ -57,12 +95,13 @@ class SubCategory (db.Model):
     icon_url = db.Column (db.Text)
     category_id = db.Column(db.Integer, db.ForeignKey('category_model.id'))
     motivations = db.relationship ('Motivation' , cascade = 'all,delete', backref = 'subcategory_model' , lazy = True)
+    usermotivations = db.relationship ('UserMotivation' , cascade = 'all,delete', backref = 'subcategory_model' , lazy = True)
+
 
     def __init__ (self, name, url, category_id):
         self.name = name
         self.icon_url = url
-
-        Category.query.get (category_id).append_subcategory (self)
+        self.category_id = category_id
 
     def save (self):
         db.session.add (self)
