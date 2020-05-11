@@ -10,24 +10,6 @@ from flask_marshmallow import Marshmallow
 from Cigar.Multimedia.model import Motivation, SubCategory
 
 
-#many to many relationship between users and visited motivations
-user_visited_motivation_table = db.Table ('user_visited_motivation_table',
-db.Column('user_id', db.Integer, db.ForeignKey('user_model.id')),
-db.Column('motivation_id', db.Integer, db.ForeignKey('motivation_model.id'))
-)
-
-#many to many relationship between users and reserve motivations
-user_reserve_motivation_table = db.Table ('user_reserve_motivation_table',
-db.Column('user_id', db.Integer, db.ForeignKey('user_model.id')),
-db.Column('motivation_id', db.Integer, db.ForeignKey('motivation_model.id'))
-)
-
-#many to many relationship between users and current motivations
-user_to_show_motivation_table = db.Table ('user_to_show_motivation_table',
-db.Column('user_id', db.Integer, db.ForeignKey('user_model.id')),
-db.Column('motivation_id', db.Integer, db.ForeignKey('motivation_model.id'))
-)
-
 
 class User (db.Model, UserMixin):
     __tablename__ = 'user_model'
@@ -38,9 +20,6 @@ class User (db.Model, UserMixin):
     role = db.Column(db.String(10), nullable = False)   #user, admin, owner
     pass_hash = db.Column(db.Text)
     motivation_count = db.Column (db.Integer, nullable = False)
-    visited_motivations = db.relationship("Motivation", secondary = user_visited_motivation_table)
-    reserve_motivations = db.relationship("Motivation", secondary = user_reserve_motivation_table)
-    to_show_motivations = db.relationship("Motivation", secondary = user_to_show_motivation_table)
 
 
     def __init__ (self, name, email, password, role = 'user', count = 5):
@@ -72,64 +51,6 @@ class User (db.Model, UserMixin):
     @staticmethod
     def query_by_email (email):
         return User.query.filter_by (email = email).first()
-
-    def append_viewed_motivations (self, motivation):
-        self.visited_motivations.extend (motivation)
-        db.session.commit()
-
-    def append_reserve_motivations (self, motivation):
-        self.reserve_motivations.append (motivation)
-        db.session.commit()
-
-    def remove_reserve_motivations(self):
-        self.reserve_motivations = []
-        db.session.commit()
-
-    def feed_reserve_from_visited (self, subcategory_id):
-        visited_from_this_category = []
-        for visited in self.visited_motivations:
-            if visited.subcategory_id == subcategory_id:
-                visited_from_this_category.append (visited)
-        random_range = random.sample (range(len(visited_from_this_category)), self.motivation_count)
-        for idx in random_range:
-            self.append_reserve_motivations (visited_from_this_category[idx])
-        db.session.commit()
-
-    def get_to_show_motivations (self, subcategoryId):
-        to_show_motivations = []
-        for motivation in self.to_show_motivations:
-            if motivation.subcategory_id == subcategoryId:
-                to_show_motivations.append(motivation)
-        return (to_show_motivations)
-
-    @staticmethod
-    def update_reserve_motivations ():
-        all_motivations = {}
-        for user in User.query.all():
-            for subcategory_id, in db.session.query (SubCategory.id).all():
-                all_motivations[subcategory_id] = Motivation.query.filter(~Motivation.id.in_ ([i.id for i in user.visited_motivations]),
-                                                                        Motivation.subcategory_id == subcategory_id)
-            user.remove_reserve_motivations()
-            for i in all_motivations:   #for each subcategory
-                #if  (all_motivations[i].count() ) > 5:
-                try:
-                    random_range = random.sample (range(all_motivations[i].count()), user.motivation_count)
-                    for idx in random_range:
-                        user.append_reserve_motivations (all_motivations[i][idx])
-                except ValueError:
-                    #if don't have enough non-visited msgs
-                    #then feed reserved list randomly from old visited msgs
-                    user.feed_reserve_from_visited (i) #i is current subcategory
-
-
-
-    @staticmethod
-    def update_to_show_motivations ():
-        for user in User.query.all():
-            user.append_viewed_motivations (user.to_show_motivations)
-            user.to_show_motivations = user.reserve_motivations
-        db.session.commit()
-            #commit for each user or commit all ???!!!
 
     def serialize_one (self):
         return UserSchema().dump(self)
