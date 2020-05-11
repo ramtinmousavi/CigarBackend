@@ -3,7 +3,8 @@ from flask_login import login_required
 from flask_cors import  cross_origin
 
 from Cigar.Authentication.model import User
-from Cigar.Multimedia.model import Category, SubCategory, Book, Video, Podcast, Motivation
+from Cigar.Multimedia.model import  Book, Video, Podcast
+from Cigar.Motivation.model import Category, SubCategory, Motivation
 from Cigar import response_generator
 
 admin = Blueprint('admin', __name__)
