@@ -4,7 +4,7 @@ from threading import Thread
 from Cigar import DataBase as db
 from Cigar import app
 from Cigar.Job.controller import run_schedule
-#from Instances import make_instances
+from instances import make_instances
 from Cigar.Authentication.model import User #comment
 
 from flask_script import Manager, prompt_bool
@@ -14,7 +14,7 @@ manager = Manager(app)
 @manager.command
 def initdb():
     db.create_all()
-    User ('admin','admin','admin','owner').save()
+    make_instances()
     print ('Initialized the database')
 
 #ask password to drop db
