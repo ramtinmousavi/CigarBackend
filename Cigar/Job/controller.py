@@ -2,14 +2,15 @@ import schedule
 import time
 import datetime
 
-from Cigar.Authentication.model import User
+from Cigar.Motivation.controller import update_motivations
+from Cigar.Motivation.model import expire_yesterday
+
+def motivation_updater ():
+    expire_yesterday()
+    update_motivations()
 
 def run_schedule ():
-    #schedule.every().day.at("00:00").do(User.update_to_show_motivations)
-    #schedule.every().day.at("12:00").do(User.update_reserve_motivations)
-    User.update_reserve_motivations()
-    schedule.every(10).seconds.do(User.update_to_show_motivations)
-    schedule.every(25).seconds.do(User.update_reserve_motivations)
+    schedule.every(10000).seconds.do(motivation_updater)
 
     while True:
         schedule.run_pending()
