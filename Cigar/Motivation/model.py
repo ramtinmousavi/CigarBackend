@@ -91,7 +91,7 @@ class SubCategory (db.Model):
     __tablename__ = 'subcategory_model'
 
     id = db.Column (db.Integer, primary_key = True)
-    name = db.Column (db.String (30) , nullable = False)
+    name = db.Column (db.String (50) , nullable = False)
     icon_url = db.Column (db.Text)
     category_id = db.Column(db.Integer, db.ForeignKey('category_model.id'))
     motivations = db.relationship ('Motivation' , cascade = 'all,delete', backref = 'subcategory_model' , lazy = True)
