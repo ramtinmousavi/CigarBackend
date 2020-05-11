@@ -79,7 +79,7 @@ def update_motivations ():
                 visited_motivations = UserMotivation.query.with_entities\
                                         (UserMotivation.motivation_id)\
                                         .filter(UserMotivation.user_id == user.id,\
-                                        UserMotivation.subcategory_id == subcategory_id\
+                                        UserMotivation.subcategory_id == subcategory_id,\
                                         UserMotivation.visited == True)
 
                 random_range = random.sample (range(visited_motivations.count()), user.motivation_count)

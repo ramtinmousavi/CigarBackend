@@ -3,10 +3,10 @@ import time
 import datetime
 
 from Cigar.Motivation.controller import update_motivations
-from Cigar.Motivation.model import expire_yesterday
+from Cigar.Motivation.model import UserMotivation
 
 def motivation_updater ():
-    expire_yesterday()
+    UserMotivation.expire_yesterday()
     update_motivations()
 
 def run_schedule ():

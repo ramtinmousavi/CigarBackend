@@ -34,7 +34,7 @@ def run():
     t.daemon = True
     t.start()
 
-    app.run(debug = False, host='0.0.0.0')
+    app.run(debug = True, host='0.0.0.0')
 
 
 if __name__ == '__main__':
