@@ -27,6 +27,7 @@ def sign_up():
 
             new_user = User (name, email, password)
             new_user.save()
+            new_user.initialize_motivations()
 
             output = response_generator (new_user.serialize_one(), 200, 'ثبت نام با موفقیت انجام شد')
             return jsonify (output)
