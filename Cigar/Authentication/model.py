@@ -50,13 +50,41 @@ class User (db.Model, UserMixin):
         self.motivation_count = count
         db.session.commit()
 
-    def initialize_motivations (self):
-        for subcategory in SubCategory.query.all():
-            motivations = Motivation.query.filter_by (subcategory_id = subcategory.id)
-            random_range = random.sample (range(motivations.count()), user.motivation_count * 7)
-            for i in range (len(random_range)):
-                new_record = UserMotivation (self.id, motivations[random_range[i]].id, subcategory.id, days = i%7)
+    def clear_visited_motivations (self):
+        UserMotivation.query.filter (UserMotivation.user_id == self.id, UserMotivation.visited == False).delete()
+        db.session.commit()
+
+    @staticmethod
+    def initialize_motivations (user_id, user_count):
+        random.seed (user_id)
+        for subcategory_id, in SubCategory.query.with_entities (SubCategory.id).all():
+            motivations = Motivation.query.filter_by (subcategory_id = subcategory_id).all()
+            samples = random.sample (motivations, user_count*7)
+            for i in range (len(samples)):
+                new_record = UserMotivation (user_id, samples[i].id, subcategory_id, days = i%7)
                 new_record.save()
+        print ("DONE###########################################")
+
+    @staticmethod
+    def reinitialize_motivations (user_id, user_count):
+        random.seed (user_id)
+        for subcategory_id, in SubCategory.query.with_entities (SubCategory.id).all():
+            useless_motivations = UserMotivation.query.with_entities\
+                                            (UserMotivation.motivation_id)\
+                                            .filter(UserMotivation.user_id == user_id,\
+                                            UserMotivation.subcategory_id == subcategory_id).all()
+
+            #motivations from this category except those which are useless
+            useful_motivations = Motivation.query.filter \
+                                    (~Motivation.id.in_ (useless_motivations),\
+                                    Motivation.subcategory_id == subcategory_id).all()
+
+            samples = random.sample (useful_motivations, user_count*7)
+            for i in range (len(samples)):
+                new_record = UserMotivation (user_id, samples[i].id, subcategory_id, days = i%7)
+                new_record.save()
+
+        print ("DONE REINIT$$$$$$$$$$$##################")
 
     @staticmethod
     def query_by_email (email):
@@ -72,4 +100,4 @@ class User (db.Model, UserMixin):
 class UserSchema (ma.ModelSchema):
     class Meta:
         model = User
-        exclude = ('pass_hash', 'role')
+        exclude = ('pass_hash', 'role', 'usermotivations')
