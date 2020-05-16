@@ -17,6 +17,7 @@ motivation = Blueprint('motivation', __name__)
 @login_required
 def get_motivations (subcategoryId):
     user = User.query.get (session['user_id'])
+    print (user.id, "REQ FOR MOTIV")
     motivations = []
     motivation_ids = UserMotivation.query.with_entities\
                     (UserMotivation.motivation_id)\
@@ -25,7 +26,7 @@ def get_motivations (subcategoryId):
                     UserMotivation.timestamp == datetime.now().date())
                     #add visited == False condition !?
     for motivation_id in motivation_ids:
-        motivation.append (Motivation.query.get (motivation_id))
+        motivations.append (Motivation.query.get (motivation_id))
 
     output = response_generator (Motivation.serialize_many (motivations), 200, 'OK')
     return jsonify (output)
@@ -53,36 +54,37 @@ motivation.add_url_rule('/api/getCategory/<int:categoryId>' , view_func = get_ca
 motivation.add_url_rule('/api/getCategory' , view_func = get_category)
 
 
-def update_motivations ():
-    for user in User.query.all():
-        other_motivations = {}
 
-        for subcategory_id in SubCategory.query.with_entities (SubCategory.id).all():
-            #visited or reserved motivations of this users from this category
-            #this variable holds useless motivation IDs
-            useless_motivations = UserMotivation.query.with_entities\
-                                            (UserMotivation.motivation_id)\
-                                            .filter(UserMotivation.user_id == user.id,\
-                                            UserMotivation.subcategory_id == subcategory_id)
 
-            #motivations from this category except those which are useless
-            useful_motivations = Motivation.query.filter \
-                                    (~Motivation.id.in_ (useless_motivations),\
-                                    Motivation.subcategory_id == subcategory_id)
-            try:
-                random_range = random.sample (range(useful_motivations.count()), user.motivation_count)
-                for idx in random_range:
-                    new_record = UserMotivation (user.id, useful_motivations[idx].id, subcategory_id)
-                    new_record.save()
-
-            except ValueError:
-                visited_motivations = UserMotivation.query.with_entities\
+def update_motivations (user_id, user_count, duration = 6):
+    random.seed (user_id)
+    #TODO: if data for 6 days later not in UserMotivation then
+    for subcategory_id, in SubCategory.query.with_entities (SubCategory.id).all():
+        #visited or reserved motivations of this users from this category
+        #this variable holds useless motivation IDs
+        useless_motivations = UserMotivation.query.with_entities\
                                         (UserMotivation.motivation_id)\
-                                        .filter(UserMotivation.user_id == user.id,\
-                                        UserMotivation.subcategory_id == subcategory_id,\
-                                        UserMotivation.visited == True)
+                                        .filter(UserMotivation.user_id == user_id,\
+                                        UserMotivation.subcategory_id == subcategory_id).all()
 
-                random_range = random.sample (range(visited_motivations.count()), user.motivation_count)
-                for idx in random_range:
-                    new_record = UserMotivation (user.id, visited_motivations[idx].id, subcategory_id)
-                    new_record.save()
+        #motivations from this category except those which are useless
+        useful_motivations = Motivation.query.filter \
+                                (~Motivation.id.in_ (useless_motivations),\
+                                Motivation.subcategory_id == subcategory_id).all()
+        try:
+            samples = random.sample (useful_motivations, user_count)
+            for i in samples:
+                new_record = UserMotivation (user_id, i.id, subcategory_id, duration)
+                new_record.save()
+
+        except ValueError:
+            visited_motivations = UserMotivation.query.with_entities\
+                                    (UserMotivation.motivation_id)\
+                                    .filter(UserMotivation.user_id == user_id,\
+                                    UserMotivation.subcategory_id == subcategory_id,\
+                                    UserMotivation.visited == True)
+
+            samples2 = random.sample (visited_motivations, user_count)
+            for j in samples2:
+                new_record = UserMotivation (user_id, j.id, subcategory_id, duration)
+                new_record.save()
