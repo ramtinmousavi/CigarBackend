@@ -10,13 +10,13 @@ class UserMotivation (db.Model):
     __tablename__ = 'usermotivation_model'
 
     id = db.Column (db.Integer, primary_key = True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id'))
-    motivation_id = db.Column(db.Integer, db.ForeignKey('motivation_model.id'))
-    subcategory_id = db.Column (db.Integer, db.ForeignKey('subcategory_model.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user_model.id', ondelete = 'CASCADE'))
+    motivation_id = db.Column(db.Integer, db.ForeignKey('motivation_model.id', ondelete = 'CASCADE'))
+    subcategory_id = db.Column (db.Integer, db.ForeignKey('subcategory_model.id', ondelete = 'CASCADE'))
     timestamp = db.Column(db.DateTime, nullable=False)
     visited  = db.Column (db.Boolean, nullable = False)
 
-    def __init__ (self, user_id, motivation_id, subcategory_id, visited = False, days = 6):
+    def __init__ (self, user_id, motivation_id, subcategory_id, days, visited = False):
         self.user_id = user_id
         self.motivation_id = motivation_id
         self.subcategory_id = subcategory_id
@@ -46,7 +46,7 @@ class Motivation (db.Model):
     id = db.Column(db.Integer, primary_key = True)
     title = db.Column (db.String(40), nullable = True)
     description = db.Column (db.Text , nullable = False)
-    subcategory_id = db.Column(db.Integer, db.ForeignKey('subcategory_model.id'))
+    subcategory_id = db.Column(db.Integer, db.ForeignKey('subcategory_model.id', ondelete = 'CASCADE'))
     timestamp = db.Column (db.DateTime)
     usermotivations = db.relationship ('UserMotivation' , cascade = 'all,delete', backref = 'motivation_model' , lazy = True)
 
@@ -85,6 +85,7 @@ class Motivation (db.Model):
 class MotivationSchema (ma.ModelSchema):
     class Meta:
         model = Motivation
+        exclude = ('usermotivations',)
 
 
 class SubCategory (db.Model):
@@ -93,7 +94,7 @@ class SubCategory (db.Model):
     id = db.Column (db.Integer, primary_key = True)
     name = db.Column (db.String (50) , nullable = False)
     icon_url = db.Column (db.Text)
-    category_id = db.Column(db.Integer, db.ForeignKey('category_model.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('category_model.id', ondelete = 'CASCADE'))
     motivations = db.relationship ('Motivation' , cascade = 'all,delete', backref = 'subcategory_model' , lazy = True)
     usermotivations = db.relationship ('UserMotivation' , cascade = 'all,delete', backref = 'subcategory_model' , lazy = True)
 
@@ -131,8 +132,7 @@ class SubCategory (db.Model):
 class SubCategorySchema (ma.ModelSchema):
     class Meta:
         model = SubCategory
-    motivations = fields.Nested (MotivationSchema, many = True)
-
+        exclude = ('usermotivations','motivations')
 
 class Category (db.Model):
     __tablename__ = 'category_model'
