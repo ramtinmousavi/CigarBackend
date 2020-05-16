@@ -6,6 +6,7 @@ from Cigar import response_generator
 from Cigar.Authentication.model import User
 
 import re
+from threading import Thread
 
 authentication = Blueprint('authentication', __name__)
 
@@ -27,8 +28,10 @@ def sign_up():
 
             new_user = User (name, email, password)
             new_user.save()
-            new_user.initialize_motivations()
-
+            #User.initialize_motivations (user.id, user.motivation_count)
+            t = Thread(target = User.initialize_motivations, args = (new_user.id, new_user.motivation_count))
+            t.daemon = True
+            t.start()
             output = response_generator (new_user.serialize_one(), 200, 'ثبت نام با موفقیت انجام شد')
             return jsonify (output)
 
@@ -129,6 +132,11 @@ def edit_motivation_count (count):
     if (int(count) < 6) and (int(count) > 0):
         user = User.query.get (session['user_id'])
         user.edit_count (int (count))
+        user.clear_visited_motivations()
+
+        t = Thread(target = User.reinitialize_motivations, args = (user.id, user.motivation_count))
+        t.daemon = True
+        t.start()
 
         output = response_generator (user.serialize_one(), 200, 'تغییر با موفقیت اعمال شد')
         return jsonify (output)
