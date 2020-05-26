@@ -60,9 +60,10 @@ class User (db.Model, UserMixin):
         for subcategory_id, in SubCategory.query.with_entities (SubCategory.id).all():
             motivations = Motivation.query.filter_by (subcategory_id = subcategory_id).all()
             samples = random.sample (motivations, user_count*7)
-            for i in range (len(samples)):
-                new_record = UserMotivation (user_id, samples[i].id, subcategory_id, days = i%7)
-                new_record.save()
+            for i in range (7):
+                for j in range (user_count):
+                    new_record = UserMotivation (user_id, samples[j+(i*user_count)].id, subcategory_id, days = i)
+                    new_record.save()
         print ("DONE###########################################")
 
     @staticmethod
@@ -80,9 +81,10 @@ class User (db.Model, UserMixin):
                                     Motivation.subcategory_id == subcategory_id).all()
 
             samples = random.sample (useful_motivations, user_count*7)
-            for i in range (len(samples)):
-                new_record = UserMotivation (user_id, samples[i].id, subcategory_id, days = i%7)
-                new_record.save()
+            for i in range (7):
+                for j in range (user_count):
+                    new_record = UserMotivation (user_id, samples[j+(i*user_count)].id, subcategory_id, days = i)
+                    new_record.save()
 
         print ("DONE REINIT$$$$$$$$$$$##################")
 

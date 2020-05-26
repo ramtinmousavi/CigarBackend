@@ -55,6 +55,27 @@ motivation.add_url_rule('/api/getCategory' , view_func = get_category)
 
 
 
+@cross_origin(supports_credentials=True)
+@login_required
+def get_all_subcategories (categoryId = None):
+    if categoryId:
+        category = Category.query.get(int(categoryId))
+        if category:
+            subcategories = category.subcategories
+            output = response_generator (SubCategory.serialize_many(subcategories), 200, 'OK')
+            return jsonify (output)
+
+        output = {'categories':'', 'status':'category id is wrong'}
+        output = response_generator (None, 406, 'wrong subcategory id')
+        return jsonify (output)
+
+    subcategories = SubCategory.query.all()
+    output = response_generator (SubCategory.serialize_many(subcategories), 200, 'OK')
+    return jsonify (output)
+
+motivation.add_url_rule('/api/getAllSubcategories/<int:categoryId>' , view_func = get_all_subcategories)
+motivation.add_url_rule('/api/getAllSubcategories' , view_func = get_all_subcategories)
+
 
 def update_motivations (user_id, user_count, duration = 6):
     random.seed (user_id)

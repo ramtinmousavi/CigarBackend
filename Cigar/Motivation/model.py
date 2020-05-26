@@ -84,6 +84,7 @@ class Motivation (db.Model):
 
 class MotivationSchema (ma.ModelSchema):
     class Meta:
+        include_fk = True
         model = Motivation
         exclude = ('usermotivations',)
 
@@ -131,8 +132,11 @@ class SubCategory (db.Model):
 
 class SubCategorySchema (ma.ModelSchema):
     class Meta:
+        include_fk = True
         model = SubCategory
         exclude = ('usermotivations','motivations')
+
+
 
 class Category (db.Model):
     __tablename__ = 'category_model'

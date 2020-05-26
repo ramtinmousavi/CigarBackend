@@ -635,28 +635,6 @@ def get_subcategory(subcategoryId):
 admin.add_url_rule('/api/getSubcategory/<int:subcategoryId>' , view_func = get_subcategory)
 
 
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_all_subcategories (categoryId = None):
-    if categoryId:
-        category = Category.query.get(int(categoryId))
-        if category:
-            categories = category.subcategories
-            output = {'categories':Category.serialize_many (categories), 'status':'OK'}
-            return jsonify (output)
-
-        output = {'categories':'', 'status':'category id is wrong'}
-        return jsonify (output)
-
-    subcategories = SubCategory.query.all()
-    output = {'subcategories':SubCategory.serialize_many(subcategories), 'status':'OK'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/getAllSubcategories/<int:categoryId>' , view_func = get_all_subcategories)
-admin.add_url_rule('/api/getAllSubcategories' , view_func = get_all_subcategories)
-
-
 #----------------------------------------------------------------------#
 @cross_origin(supports_credentials=True)
 @login_required

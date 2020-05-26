@@ -25,7 +25,7 @@ def dropdb():
         db.drop_all()
         print ('Dropped the database')
 
-
+"""
 @manager.command
 def run():
     app.secret_key = os.urandom(12)
@@ -35,7 +35,7 @@ def run():
     t.start()
 
     app.run(debug = True, host='0.0.0.0')
-
+"""
 
 if __name__ == '__main__':
-    manager.run()
+    app.run()
