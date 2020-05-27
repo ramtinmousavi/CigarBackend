@@ -1,11 +1,6 @@
-import os
-from threading import Thread
-
 from Cigar import DataBase as db
 from Cigar import app
-from Cigar.Job.controller import run_schedule
 from instances import make_instances
-from Cigar.Authentication.model import User #comment
 
 from flask_script import Manager, prompt_bool
 
@@ -25,17 +20,11 @@ def dropdb():
         db.drop_all()
         print ('Dropped the database')
 
-"""
+
 @manager.command
 def run():
-    app.secret_key = os.urandom(12)
-
-    t = Thread(target = run_schedule)
-    t.daemon = True
-    t.start()
-
     app.run(debug = True, host='0.0.0.0')
-"""
+
 
 if __name__ == '__main__':
     app.run()
