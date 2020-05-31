@@ -10,6 +10,10 @@ from flask_marshmallow import Marshmallow
 from Cigar.Motivation.model import Motivation, SubCategory, UserMotivation
 
 
+user_motivation_bookmark = db.Table ('user_motivation_bookmark',
+db.Column('user_id', db.Integer, db.ForeignKey('user_model.id')),
+db.Column('motivation_id', db.Integer, db.ForeignKey('motivation_model.id')))
+
 
 class User (db.Model, UserMixin):
     __tablename__ = 'user_model'
@@ -21,6 +25,7 @@ class User (db.Model, UserMixin):
     pass_hash = db.Column(db.Text)
     motivation_count = db.Column (db.Integer, nullable = False)
     usermotivations = db.relationship ('UserMotivation' , cascade = 'all,delete', backref = 'user_model' , lazy = True)
+    motivation_bookmark = db.relationship ('Motivation', secondary = user_motivation_bookmark)
 
 
 
@@ -49,6 +54,17 @@ class User (db.Model, UserMixin):
     def edit_count (self, count):
         self.motivation_count = count
         db.session.commit()
+
+    def add_bookmark (self, motivation):
+        self.motivation_bookmark.append (motivation)
+        db.session.commit()
+
+    def remove_bookmark (self, motivation):
+        self.motivation_bookmark.remove(motivation)
+        db.session.commit()
+
+    def get_bookmark (self):
+        return self.motivation_bookmark
 
     def clear_visited_motivations (self):
         UserMotivation.query.filter (UserMotivation.user_id == self.id, UserMotivation.visited == False).delete()

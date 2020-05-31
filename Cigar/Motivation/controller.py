@@ -19,14 +19,15 @@ def get_motivations (subcategoryId):
     user = User.query.get (session['user_id'])
     print (user.id, "REQ FOR MOTIV")
     motivations = []
-    motivation_ids = UserMotivation.query.with_entities\
-                    (UserMotivation.motivation_id)\
-                    .filter (UserMotivation.user_id == user.id,\
-                    UserMotivation.subcategory_id == subcategoryId,\
-                    UserMotivation.timestamp == datetime.now().date())
-                    #add visited == False condition !?
-    for motivation_id in motivation_ids:
-        motivations.append (Motivation.query.get (motivation_id))
+    for i in range (7):
+        motivation_ids = UserMotivation.query.with_entities\
+                        (UserMotivation.motivation_id)\
+                        .filter (UserMotivation.user_id == user.id,\
+                        UserMotivation.subcategory_id == subcategoryId,\
+                        UserMotivation.timestamp == datetime.now().date() + timedelta (days = i))
+                        #add visited == False condition !?
+        for motivation_id in motivation_ids:
+            motivations.append (Motivation.query.get (motivation_id))
 
     output = response_generator (Motivation.serialize_many (motivations), 200, 'OK')
     return jsonify (output)
@@ -53,6 +54,47 @@ def get_category (categoryId = None):
 motivation.add_url_rule('/api/getCategory/<int:categoryId>' , view_func = get_category)
 motivation.add_url_rule('/api/getCategory' , view_func = get_category)
 
+@cross_origin(supports_credentials=True)
+@login_required
+def mark_motivation (motivationId):
+    motivation = Motivation.query.get (motivationId)
+    if motivation:
+        user = User.query.get (session['user_id'])
+        user.add_bookmark(motivation)
+        output = response_generator (None, 200, 'با موفقیت اضافه شد')
+        return jsonify (output)
+
+    output = response_generator (None, 406, 'motivation id is wrong')
+    return jsonify (output)
+
+motivation.add_url_rule('/api/markMotivation/<int:motivationId>' , view_func = mark_motivation)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+def unmark_motivation (motivationId):
+    motivation = Motivation.query.get (motivationId)
+    if motivation:
+        user = User.query.get (session['user_id'])
+        user.remove_bookmark(motivation)
+        output = response_generator (None, 200, 'با موفقیت حذف شد')
+        return jsonify (output)
+
+    output = response_generator (None, 406, 'motivation id is wrong')
+    return jsonify (output)
+
+motivation.add_url_rule('/api/unmarkMotivation/<int:motivationId>' , view_func = unmark_motivation)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+def get_bookmark ():
+    user = User.query.get (session['user_id'])
+    bookmark = user.get_bookmark()
+    output = response_generator (Motivation.serialize_many(bookmark), 200, 'OK')
+    return jsonify (output)
+
+motivation.add_url_rule('/api/getBookmark' , view_func = get_bookmark)
 
 
 @cross_origin(supports_credentials=True)
