@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<head>
+  <title>Main Page</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('admin.static',filename='mainstyle.css') }}"/>
+</head>
+<script>
+$(document).ready(function(){
+
+  $(".navbar a").on('click', function(event) {
+
+  if (this.hash !== "") {
+    event.preventDefault();
+    var hash = this.hash;
+    $('html, body').animate({
+      scrollTop: $(hash).offset().top
+    }, 900, function(){
+      window.location.hash = hash;
+      });
+    }
+  });
+})
+</script>
+<body data-spy="scroll" data-target=".navbar" data-offset="50">
+
+  <nav class="navbar navbar-inverse navbar-fixed-top header-img"  >
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myHeader"><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button>
+        <button class="btn navbar-brand w3-black w3-hover-gray" data-toggle="modal" data-target="#login">ورود</button>
+        <a class="navbar-brand2 navbar-brand" href="#">سیگار</a>
+      </div>
+
+	  	{% with messages = get_flashed_messages() %}
+			{% if messages %}
+				<ul class="navbar-brand2 navbar-brand" style="color:red;">
+				<br><br><br>
+				{% for message in messages %}
+					<li>{{ message }}</li>
+				{% endfor %}
+				</ul>
+			{% endif %}
+		{% endwith %}
+
+      <div class="collapse navbar-collapse" id="myHeader">
+        <ul class="nav navbar-nav navbar-right">
+
+          <li><a class="w3-black w3-hover-gray" href="#introduction"> درباره ما</a></li>
+          <li><a class="w3-black w3-hover-gray" href="#mainPage">صفحه اصلی</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="modal fade" id="login" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4>لطفا ایمیل و گذرواژه خود را وارد نمایید</h4>
+        </div>
+        <div class="modal-body text-right">
+          <form action = {{url_for ('admin.login_admin')}} method = 'POST'  role="form">
+            <div class="form-group">
+              <label for="email">ایمیل</label>&nbsp<span class=" glyphicon glyphicon-user"></span>
+              <input type="text" name = "email" class="form-control" id="email" placeholder="ایمیل" />
+            </div>
+            <div class="form-group">
+              <label for="password">رمز عبور</label>&nbsp<span class=" glyphicon glyphicon-lock"></span>
+              <input type="password" name = "password" class="form-control" id="password" placeholder="رمز عبور" />
+            </div>
+            <button type="submit" class="btn btn-block">ورود</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center back-img w3-opacity-min container-fluid " id="mainPage">
+    <div class="w3-display-middle" style="white-space:nowrap;">
+      <span class="w3-center w3-padding-large w3-black w3-xlarge w3-wide w3-animate-opacity">خوش آمدید</span> </br></br>
+      <span class="w3-center w3-padding-large w3-black w3-large w3-wide w3-animate-opacity">برای ورود به پنل مدیریت بر روی دکمه ورود کلیک نمایید</span>
+    </div>
+  </div>
+</body>

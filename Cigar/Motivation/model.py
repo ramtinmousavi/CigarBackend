@@ -109,10 +109,9 @@ class SubCategory (db.Model):
         db.session.add (self)
         db.session.commit()
 
-    def edit (self, name, icon = None):
+    def edit (self, name, icon):
         self.name = name
-        if icon:
-            self.icon_url = icon
+        self.icon_url = icon
         db.session.commit()
 
     def delete (self):

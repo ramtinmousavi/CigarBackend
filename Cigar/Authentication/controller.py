@@ -57,6 +57,7 @@ def login():
             login_user(stored_user)
             session ['user_id'] = stored_user.id
             session ['role'] = stored_user.role
+            session.permanent = True
 
             output = response_generator (stored_user.serialize_one(), 200, 'ورود با موفقیت انجام شد')
             return jsonify (output)

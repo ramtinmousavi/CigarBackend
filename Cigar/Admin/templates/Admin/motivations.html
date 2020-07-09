@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<head>
+  <title>Categories</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href={{ url_for('admin.static',filename='profile.css') }} />
+</head>
+<script>
+  function hide() {
+    document.getElementById("rightPanel").style.display = "none";
+    document.getElementById("myOverlay").style.display = "none";
+  }
+
+  function show() {
+    document.getElementById("rightPanel").style.display = "block";
+    document.getElementById("myOverlay").style.display = "block";
+  }
+
+</script>
+
+<body class = "w3-main">
+
+      <!-- NavBar -->
+      <div class="w3-bar w3-black">
+        <a href={{url_for('admin.logout_admin')}} class="w3-bar-item w3-hover-white w3-button">خروج</a>
+        <a href={{url_for('admin.admin_profile')}} class="w3-bar-item w3-hover-white w3-button w3-right">داشبورد</a>
+        <a href={{url_for('admin.show_categories', page_num=1)}} class="w3-bar-item w3-hover-white w3-button w3-right">دسته بندی ها</a>
+        <a href={{url_for('admin.show_subcategories', categoryId = category.id, page_num=1)}} class="w3-bar-item w3-hover-white w3-button w3-right">زیر دسته بندی ها</a>
+		    <a href ={{url_for('admin.new_motivation', categoryId = category.id, subcategoryId = subcategory.id)}} class="w3-bar-item w3-hover-white w3-button w3-right">افزودن پیام</a>
+
+      </div>
+
+
+
+
+	  {% with messages = get_flashed_messages() %}
+			{% if messages %}
+				<ul class="w3-container text-center title" style="color:red; font-size:150%;">
+				<br>
+				{% for message in messages %}
+					<li>{{ message }}</li>
+				{% endfor %}
+				</ul>
+			{% endif %}
+		{% endwith %}
+
+
+
+
+      <!-- Title -->
+      <div class="w3-container text-center title">
+        <h1><b>پیام ها</b></h1>
+        <h3 class="w3-text-purple">نام دسته بندی: {{category.name.title()}}<br></h3>
+        <h3 class="w3-text-gray">نام زیر دسته بندی: {{subcategory.name.title()}}<br></h3>
+
+
+      </div>
+
+	 {% for i in motivations.items %}
+
+		<div class="col-sm-3">
+          <div class="thumbnail text-center w3-card">
+			<br>
+            <h4 style = "margin:5px; "><b>عنوان </b>:{{i.title}}</h4>
+            <h4 style = "margin:5px; "><b>محتوا </b>:{{i.description}}</h4>
+
+			<br>
+           <button class="btn w3-red w3-hover-white" data-toggle="modal" data-target="#proceedbox{{i.id}}"><a style = "color:black;" href = "#">حذف پیام</a></button>
+           <button class="btn w3-blue w3-hover-white" onclick=""><a style = "color:black;" href = {{url_for('admin.update_motivation', categoryId=category.id, subcategoryId=subcategory.id, motivationId=i.id)}}>ویرایش پیام</a></button>
+
+      </div>
+        </div>
+
+	{% endfor %}
+
+
+	<div align = "center" class="w3-container">
+	{% for page in motivations.iter_pages(left_edge=2, right_edge=2, left_current=1, right_current=1) %}
+		{% if page %}
+			<a  style = "color:black; padding-left: 18px; padding-bottom:25px; font-size:20px;" href = "{{url_for ('admin.show_motivations' ,categoryId = category.id, subcategoryId = subcategory.id ,page_num = page)}}"> {{page}}&nbsp </a>
+		{%else%}
+		...
+		{% endif %}
+	{% endfor %}
+	</div>
+
+  {% for i in motivations.items %}
+        <div id="proceedbox{{i.id}}" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+            <div class="modal-content text-center">
+              <div class="modal-body">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h2>برای تایید حذف لطفا گذرواژه خود را وارد کنید</h2>
+              </div>
+              <div class="modal-footer">
+
+  		<!-- data-target="reedeemSuccessful"  data-toggle="modal" data-dismiss="modal"-->
+  			<form method = 'POST' action = {{url_for('admin.delete_motivation')}}>
+          <div class="form-group">
+            <label for="password">رمز عبور</label>&nbsp<span class=" glyphicon glyphicon-lock"></span>
+            <input type="password" name = "password" class="form-control" id="password" placeholder="رمز عبور" />
+            <input type="hidden" value={{i.id}} name="motivation_id" />
+            <input type="hidden" value={{category.id}} name="category_id" />
+            <input type="hidden" value={{subcategory.id}} name="subcategory_id" />
+
+          </div>
+          <button class="btn w3-black w3-hover-white" data-dismiss="modal">انصراف از حذف<span class="glyphicon glyphicon-remove iconX"></span></button>
+          <button type= "submit" class="btn w3-black w3-hover-white">تایید حذف<span class="glyphicon glyphicon-ok iconOk"></span></button>
+              </form>
+
+  			</div>
+            </div>
+          </div>
+        </div>
+  	 {% endfor %}
+
+
+
+    </div>
+  </div>
+
+
+</body>

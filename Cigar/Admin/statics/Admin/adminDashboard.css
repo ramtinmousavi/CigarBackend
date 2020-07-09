@@ -1,0 +1,89 @@
+@font-face {
+    font-family: forte;
+    src : url('forte.ttf');
+}
+@font-face {
+  src: url('B_Mitra.ttf');
+  font-family: Mitra;
+}
+@font-face {
+  src: url('freescpt.ttf');
+  font-family: freescript;
+}
+.mySidebar {
+  right:0;
+  width: 200px;
+  z-index:4 ;
+  display: none;
+  font-family: Mitra;
+}
+.stats {
+  padding: 20px 10%;
+}
+.w3-main {
+
+  margin-right: 200px;
+  background-image: url('informdl.jpg');
+  background-attachment: fixed;
+  background-position: left-top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  font-family: Mitra;
+
+}
+.w3-bar {
+  z-index: 100;
+  height: 60px;
+
+}
+.bar-pic {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.Logo {
+  font-family: 'forte';
+  font-size: 150%;
+}
+.admin-name {
+  font-family: 'freescript';
+  font-size: 40px;
+}
+.w3-ul li {
+  border: none
+}
+.panelItem:after,.panelItem:link,.panelItem:visited {
+  color : white;
+  text-decoration: none;
+}
+.panelItem:hover {
+  color : #3BF9F9;
+}
+.title {
+  font-family: 'freescript';
+}
+.title h1 {
+  font-size: 60px;
+}
+.user-icon .fa-users, .eye-icon .fa-eye, .ad-icon .fa-adversal, .dl-icon .fa-download {
+    font-size: 3em !important;
+    width: 85px;
+    height: 85px;
+    line-height: 87px;
+}
+.w3-card {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.req-app-icon {
+  width: 80px;
+}
+@media screen and (max-width:800px) {
+  .app-name,.ad-info, .acc-btns {
+    padding-top: 3%;
+  }
+}
+@media screen and (min-width:800px) {
+  .app-name,.ad-info, .acc-btns {
+    padding-top: 1.5%;
+  }
+}

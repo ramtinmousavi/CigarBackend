@@ -1,0 +1,16 @@
+@font-face {
+  src: url('B_Mitra.ttf');
+  font-family: Mitra;
+}
+body {
+  font-family: 'Mitra';
+}
+.main {
+  background-image: url('back1.jpg');
+  min-height: 800px;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding-bottom: 0px;
+}

@@ -43,6 +43,10 @@ class User (db.Model, UserMixin):
         db.session.add (self)
         db.session.commit()
 
+    def delete (self):
+        db.session.delete (self)
+        db.session.commit()
+
     def rename (self, new_name):
         self.name = new_name
         db.session.commit()

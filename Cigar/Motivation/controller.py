@@ -141,11 +141,14 @@ def update_motivations (user_id, user_count, duration = 6):
                 new_record.save()
 
         except ValueError:
-            visited_motivations = UserMotivation.query.with_entities\
+            visited_motivations_ids = UserMotivation.query.with_entities\
                                     (UserMotivation.motivation_id)\
                                     .filter(UserMotivation.user_id == user_id,\
                                     UserMotivation.subcategory_id == subcategory_id,\
                                     UserMotivation.visited == True)
+
+            visited_motivations = Motivation.query.filter\
+                                    (Motivation.id.in_(visited_motivations_ids)).all()
 
             samples2 = random.sample (visited_motivations, user_count)
             for j in samples2:

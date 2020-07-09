@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<head>
+  <title>Add Category</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('admin.static',filename='submitAd.css') }}" />
+</head>
+
+
+
+<body>
+
+
+	  	{% with messages = get_flashed_messages() %}
+			{% if messages %}
+				<ul class="w3-container text-center title" style="color:red;">
+				<br><br><br>
+				{% for message in messages %}
+					<li>{{ message }}</li>
+				{% endfor %}
+				</ul>
+			{% endif %}
+		{% endwith %}
+
+
+
+  <div class="main">
+    <div class="container">
+
+
+
+
+      <form action = {{url_for ('admin.add_motivation')}} method = "POST" class="w3-container w3-card w3-light-grey w3-text-blue w3-margin" enctype="multipart/form-data">
+        <a class = "w3-left w3-text-red" href = {{url_for('admin.show_motivations', categoryId = category.id,subcategoryId=subcategory.id, page_num = 1)}}>بازگشت</a>
+        <h2 class="w3-center">ثبت پیام جدید</h2>
+        <h4 class="w3-right w3-text-purple">نام دسته بندی: {{category.name}}</h4>
+        <h4 class="w3-right w3-text-purple">نام زیر دسته بندی: {{subcategory.name}}&emsp;&emsp;&emsp;&emsp;</h4>
+        <div class="w3-row w3-section">
+          <input required class="w3-input w3-border" name="title" type="text" placeholder="عنوان پیام">
+          <br/>
+          <input required class="w3-input w3-border" name="description" type="text" placeholder="محتوای پیام">
+
+          <input type="hidden" value={{category.id}} name="category_id" />
+          <input type="hidden" value={{subcategory.id}} name="subcategory_id" />
+
+        </div>
+        <p class="w3-center">
+          <button type="submit" class="w3-button w3-section w3-blue w3-ripple">افزودن زیر دسته بندی</button>
+        </p>
+      </form>
+    </div>
+  </div>
+</body>

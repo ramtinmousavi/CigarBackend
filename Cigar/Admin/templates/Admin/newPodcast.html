@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<head>
+  <title>Add Podcast</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('admin.static',filename='submitAd.css') }}" />
+</head>
+
+
+
+<body>
+
+
+
+
+
+
+  <div class="main">
+    <div class="container">
+
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="w3-container text-center title " style="color:red;">
+        <br><br><br>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+
+
+      <form action = {{url_for ('admin.add_podcast')}} method = "POST" class="w3-container w3-card w3-light-grey w3-text-blue w3-margin" enctype="multipart/form-data">
+        <a class = "w3-left w3-text-red" href = {{url_for('admin.show_podcasts', page_num = 1)}}>بازگشت</a>
+        <h2 class="w3-center">افزودن پادکست</h2>
+        <div class="w3-row w3-section">
+          <input required class="w3-input w3-border" name="title" type="text" placeholder="عنوان پادکست">
+          <br/>
+          <input required class="w3-input w3-border" name="description" type="text" placeholder="توضیحات">
+          <br/>
+          <label required class="w3-right w3-text-black" for="podcast">انتخاب پادکست</label>
+          <input required class="custom-file-input" type="file" name="podcast" id="podcast">
+        </div>
+        <p class="w3-center">
+          <button type="submit" class="w3-button w3-section w3-blue w3-ripple">افزودن پادکست</button>
+        </p>
+      </form>
+    </div>
+  </div>
+</body>

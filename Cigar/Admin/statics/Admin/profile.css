@@ -1,0 +1,102 @@
+@font-face {
+  src: url('B_Mitra.ttf');
+  font-family: Mitra;
+}
+body {
+  font-family: Mitra;
+}
+.w3-sidebar {
+  width: 200px;
+  right:0;
+  z-index: 4;
+  font-family:'Mitra' ;
+}
+.w3-sidebar img {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.w3-main {
+  background-image: url('gifthistory.jpg');
+  background-attachment: fixed;
+  background-position: left-top;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.w3-bar {
+  padding: 0px 10%;
+}
+a:hover,a:after,a:visited,a:link {
+  text-decoration: none;
+  color: white;
+}
+#rightPanel a {
+  color:blue;
+}
+.thumbnail img {
+  width: 30%;
+}
+.row {
+  padding: 10px 10%;
+}
+.btn,.w3-button {
+  transition: .2s;
+  border-radius: 0;
+}
+.btn:hover, .btn:focus {
+  border: 1px solid black;
+}
+.title {
+  padding: 20px 0px;
+}
+.modal-footer {
+  text-align: center;
+}
+.iconX {
+  color: red;
+}
+.iconOk {
+  color: green;
+}
+footer {
+    background-color: #2d2d30;
+    color: #f5f5f5;
+    /* padding-top: 32px; */
+}
+
+footer a {
+    color: #f5f5f5;
+}
+
+footer a:hover {
+    color: #777;
+    text-decoration: none;
+}
+.giftbackimage {
+  background-image: url('uperfresh2.jpg');
+  background-attachment: fixed;
+  background-position: left-top;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.gifthistorybackimage {
+  background-image: url('gifthistory.jpg');
+  background-attachment: fixed;
+  background-position: left-top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  min-height: 600px;
+}
+@media screen and (min-width: 800px){
+   footer {
+    margin-right: 10%;
+  }
+
+}
+.w3-main-dl {
+  background-image: url('informdl.jpg');
+  background-attachment: fixed;
+  background-position: left-top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  min-height: 600px;
+}

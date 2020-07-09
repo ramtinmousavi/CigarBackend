@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<head>
+  <title>Admin Panel</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-colors-flat.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('admin.static',filename='adminDashboard.css') }}" />
+</head>
+<script>
+  function hide() {
+    document.getElementById("rightPanel").style.display = "none";
+    document.getElementById("myOverlay").style.display = "none";
+  }
+
+  function show() {
+    document.getElementById("rightPanel").style.display = "block";
+    document.getElementById("myOverlay").style.display = "block";
+  }
+</script>
+
+<body class="w3-main">
+  <div class="w3-bar w3-light-gray w3-xlarge">
+    <div class="w3-row">
+      <div class="w3-col s5 l2 w3-light-blue text-center" style="height:60px">
+        <span class="w3-text-black Logo">Cigar</span>
+      </div>
+      <div class="w3-col s7 l10">
+
+        <a href = {{url_for('admin.logout_admin')}}><span class="glyphicon glyphicon-log-out w3-bar-item w3-text-black w3-hover-gray w3-hide-small"></span></a>
+
+        <button class="w3-button w3-bar-item w3-xlarge w3-right w3-hide-large" onclick="show()">&#9776;</button>
+        <img class="w3-circle w3-right bar-pic w3-margin-right" src="{{ url_for('admin.static',filename='avatar.png') }}" style="width:50px;" />
+        <span class="w3-bar-item w3-right admin-name w3-hide-small">{{user.name.title()}}</span>
+      </div>
+    </div>
+  </div>
+  <div class="mySidebar w3-sidebar w3-flat-midnight-blue w3-bar-block w3-collapse" id="rightPanel">
+    <button class="w3-bar-item w3-button w3-hide-large" onclick="hide()">&times;</button>
+    <ul class="w3-large w3-ul">
+
+
+      <li class="w3-padding-small w3-margin-top w3-bar"><a class="panelItem" href={{url_for('admin.show_categories', page_num = 1)}}>
+        <span class="fas fa-tasks"></span>
+        <span class="w3-margin-left">دسته بندی ها</span>
+      </a></li>
+      <li class="w3-padding-small w3-margin-top w3-bar"><a class="panelItem" href={{url_for('admin.show_videos', page_num=1)}}>
+        <span class="fab fa-app-store-ios"></span>
+        <span class="w3-margin-left">ویدئو</span>
+      </a></li>
+      <li class="w3-padding-small w3-margin-top w3-bar"><a class="panelItem" href={{url_for('admin.show_books', page_num=1)}}>
+        <span class="fab fa-app-store-ios"></span>
+        <span class="w3-margin-left">کتاب</span>
+      </a></li>
+      <li class="w3-padding-small w3-margin-top w3-bar"><a class="panelItem" href={{url_for('admin.show_podcasts', page_num=1)}}>
+        <span class="fab fa-app-store-ios"></span>
+        <span class="w3-margin-left">پادکست</span>
+      </a></li>
+      <li class="w3-padding-small w3-margin-top w3-bar"><a class="panelItem" href={{url_for('admin.show_admins', page_num=1)}}>
+        <span class="fas fa-user"></span>
+        <span class="w3-margin-left">ادمین ها</span>
+      </a></li>
+      <li class="w3-padding-small w3-margin-top w3-bar"><a class="panelItem" href={{url_for('admin.logout_admin')}}>
+        <span class="fas fa-sign-out-alt"></span>
+        <span class="w3-margin-left">خروج</span>
+      </a></li>
+    </ul>
+  </div>
+  <div class="w3-overlay w3-animate-opacity" onclick="hide()" style="cursor:pointer" title="Close Sidemenu" id="myOverlay"></div>
+  <!-- Main Material -->
+  <div>
+    <div class="w3-container text-center title">
+      <h1>Admin <span class="w3-hide-small">Dashboard </span>!</h1>
+    </div>
+    <div class="w3-row-padding stats">
+      <div class="w3-col s12 m6 l3">
+        <div class="w3-card text-center eye-icon w3-flat-peter-river">
+          <div class="w3-row">
+            <div class="w3-col s4">
+              <i class="fas fa-eye"></i>
+            </div>
+            <div class="w3-col-s8 text-center">
+              <h3>تعداد پیام ها</h3>
+              <h4>{{motivs_count}}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="w3-col s12 m6 l3">
+        <div class="w3-card text-center user-icon w3-flat-orange">
+          <div class="w3-row">
+            <div class="w3-col s4">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="w3-col-s8 text-center">
+              <h3>تعداد کاربران</h3>
+              <h4>{{users_count}}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="w3-col s12 m6 l3">
+        <div class="w3-card text-center dl-icon w3-flat-emerald">
+          <div class="w3-row">
+            <div class="w3-col s4">
+              <i class="fas fa-download"></i>
+            </div>
+            <div class="w3-col-s8 text-center">
+              <h3>تعداد دسته بندی ها</h3>
+              <h4>{{category_count}}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="w3-col s12 m6 l3">
+        <div class="w3-card text-center ad-icon w3-flat-alizarin">
+          <div class="w3-row">
+            <div class="w3-col s4">
+              <i class="fab fa-adversal"></i>
+            </div>
+            <div class="w3-col-s8 text-center">
+              <h3>تعداد مدیا</h3>
+              <h4>{{media_count}}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

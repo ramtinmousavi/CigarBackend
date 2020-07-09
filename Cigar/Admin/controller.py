@@ -1,13 +1,17 @@
 from flask import request, jsonify, session, Blueprint
-from flask_login import login_required
+from flask import render_template, url_for, redirect, flash
+from flask import current_app
+from flask_login import login_required, login_user, logout_user, current_user
 from flask_cors import  cross_origin
+from werkzeug.utils import secure_filename
+import os, re
 
 from Cigar.Authentication.model import User
 from Cigar.Multimedia.model import  Book, Video, Podcast
 from Cigar.Motivation.model import Category, SubCategory, Motivation
-from Cigar import response_generator
+from Cigar import response_generator,  allowed_media
 
-admin = Blueprint('admin', __name__)
+admin = Blueprint('admin', __name__, template_folder = 'templates/Admin', static_folder = 'statics/Admin')
 
 
 def admin_required (func):
@@ -21,640 +25,771 @@ def admin_required (func):
     return wrapper
 
 
-@cross_origin(supports_credentials=True)
-@login_required
-def register_admin ():
-    if session['role'] == 'owner':
-        if request.method == 'POST':
-            req = request.get_json(force = True)
-
-            name = req['name']
-            email = req ['email']
-            password = req ['password']
-
-            if (User.query_by_email (email) is not None):
-                output = response_generator (None, 304, 'کاربر تکراری است')
-                return jsonify (output)
-
-            new_user = User (name, email, password, role = 'admin')
-            new_user.save()
-
-            output = response_generator (new_user.serialize_one(), 200, 'ثبت نام با موفقیت انجام شد')
-            return jsonify (output)
+def owner_required (func):
+    def wrapper (*args, **kwargs):
+        if (session['role'] == 'owner'):
+            return func (*args, **kwargs)
+        else:
+            flash ('شما دسترسی لازم را ندارید')
+            return redirect (url_for ('admin.admin_profile'))
+    wrapper.__name__ = func.__name__
+    return wrapper
 
 
-        output = response_generator (None, 405, 'method is not POST')
-        return jsonify (output)
+def home ():
+    if current_user.is_authenticated:
+        return redirect (url_for('admin.admin_profile'))
+    return render_template ('main.html')
+admin.add_url_rule('/' , view_func = home)
 
-    output = response_generator (None, 403, 'access denied')
-    return jsonify (output)
 
-admin.add_url_rule('/api/registerAdmin' , view_func = register_admin, methods = ['POST' , 'GET'])
-
-#-----------------------------------------------------------------#
-#Motivation APIs
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def add_motivation (subcategoryId):
+def login_admin():
     if request.method == 'POST':
-        req = request.get_json(force = True)
 
-        if (SubCategory.query.get (int(subcategoryId))):
-            title = req['title']
-            description = req['description']
-            new_motivation = Motivation (title, description, int(subcategoryId))
-            new_motivation.save()
+        email = request.form['email']
+        password = request.form ['password']
 
-            output = {'motivation':new_motivation.serialize_one(), 'status':'OK'}
-            return jsonify (output)
+        stored_user = User.query_by_email (email)
+        if (stored_user is not None) and (stored_user.check_password(password)):
+            if (stored_user.role == 'admin' or stored_user.role == 'owner'):
+                login_user(stored_user)
+                session ['user_id'] = stored_user.id
+                session ['role'] = stored_user.role
 
-        output = response_generator (None, 406, 'wrong subcategory id')
-        return jsonify(output)
+                return redirect (url_for ('admin.admin_profile'))
 
-    output = response_generator (None, 405, 'method is not POST')
-    return jsonify (output)
-
-admin.add_url_rule('/api/addMotivation/<int:subcategoryId>' , view_func = add_motivation, methods = ['POST' , 'GET'])
+    flash ('لطفا ایمیل و گذرواژه را به درستی وارد نمایید')
+    return redirect (url_for ('admin.home'))
+admin.add_url_rule('/login' , view_func = login_admin, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def edit_motivation (motivationId):
+def logout_admin ():
+    session.pop('user_id', None)
+    session.pop ('role', None)
+    logout_user()
+
+    flash ('با موفقیت خارج شدید. به امید دیدار مجدد')
+    return redirect (url_for('admin.home'))
+admin.add_url_rule('/logout' , view_func = logout_admin)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def admin_profile ():
+    users_count = len(User.query.all())
+    motivs_count = len(Motivation.query.all())
+    category_count = len(Category.query.all())
+    media_count = len(Video.query.all()) + len(Book.query.all()) + len(Podcast.query.all())
+    return render_template ('adminDashboard.html', user = User.query.get(session['user_id']),\
+     users_count = users_count, motivs_count = motivs_count,\
+     category_count = category_count, media_count = media_count)
+
+admin.add_url_rule('/home' , view_func = admin_profile)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def show_categories (page_num):
+    categories = Category.query.paginate (per_page = 8, page = page_num, error_out = True)
+    return (render_template ('categories.html', categories = categories))
+admin.add_url_rule('/categories/<int:page_num>' , view_func = show_categories)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def delete_category ():
     if request.method == 'POST':
-        req = request.get_json(force = True)
+        pw = request.form ['password']
+        categoryId = int(request.form ['category_id'])
+        user = User.query.get (session['user_id'])
+        if (user.check_password (pw)):
+            current_category = Category.query.get (categoryId)
+            if (current_category is not None):
+                current_category.delete()
+                flash ("دسته بندی با موفقیت حذف شد")
+                return redirect (url_for('admin.show_categories', page_num = 1))
 
-        current_motivation = Motivation.query.get (int(motivationId))
-        if (current_motivation is not None):
+            flash ("دسته بندی اشتباه است")
+            return redirect (url_for('admin.show_categories', page_num = 1))
 
-            title = req['title']
-            description = req['description']
-            current_motivation.edit (title, description)
+        flash ('گذرواژه اشتباه است')
+        return redirect (url_for('admin.show_categories', page_num = 1))
 
-            output = {'motivation':current_motivation.serialize_one(), 'status':'OK'}
-            return jsonify (output)
-
-        output = {'motivation':'', 'status':'motivation id is wrong'}
-        return jsonify (output)
-
-    output = {'motivation':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/editMotivation/<int:motivationId>' , view_func = edit_motivation, methods = ['POST' , 'GET'])
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def delete_motivation (motivationId):
-
-    current_motivation = Motivation.query.get (int(motivationId))
-    if (current_motivation is not None):
-        current_motivation.delete()
-        output = {'status':'OK'}
-        return jsonify (output)
-
-    output = {'status':'motivation id is wrong'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/deleteMotivation/<int:motivationId>' , view_func = delete_motivation)
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/deleteCategory' , view_func = delete_category, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def get_motivation (motivationId):
+def new_category ():
+    return render_template ('newCategory.html')
+admin.add_url_rule('/newCategory' , view_func = new_category)
 
-    current_motivation = Motivation.query.get (int(motivationId))
-    if (current_motivation is not None):
-
-        output = {'motivation':current_motivation.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'motivation':'', 'status':'motivation id is wrong'}
-    return jsonify (output)
-
-
-admin.add_url_rule('/api/getMotivation/<int:motivationId>' , view_func = get_motivation)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_all_motivations ():
-
-    motivations = Motivation.query.all()
-
-    output = {'motivations': Motivation.serialize_many(motivations), 'status':'OK'}
-    return jsonify(output)
-
-admin.add_url_rule('/api/getAllMotivations/' , view_func = get_all_motivations)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_all_motivations_by_subcategory (subcategoryId):
-    if (SubCategory.query.get (int(subcategoryId))):
-        motivations = Motivation.query.filter_by (subcategory_id = int(subcategoryId))
-
-        output = {'motivation':Motivation.serialize_many (motivations), 'status':'OK'}
-        return jsonify(output)
-
-    output = {'motivations':'', 'status':'wrong subcategory id'}
-    return jsonify(output)
-
-admin.add_url_rule('/api/getAllMotivationsBySubcategory/<int:subcategoryId>' , view_func = get_all_motivations_by_subcategory)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_all_motivations_by_category (categoryId):
-    category = Category.query.get (int(categoryId))
-    if category:
-        motivations = []
-        for subcategory in category.subcategories:
-            motivation.extend (subcategory.motivations)
-
-        output = {'motivations':Motivation.serialize_many(motivations), 'status':'OK'}
-
-    output = {'motivations':'', 'status':'wrong category id'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/getAllMotivationsByCategory/<int:categoryId>' , view_func = get_all_motivations_by_category)
-
-
-#------------------------------------------------------#
-#Video APIs
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def add_video ():
-    if request.method == 'POST':
-        req = request.get_json(force = True)
-
-        title = req['title']
-        description = req['description']
-        url = req['url']
-
-        new_video = Video (title, description, url)
-        new_video.save()
-
-        output = {'video':new_video.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'motivation':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/addVideo' , view_func = add_video, methods = ['POST' , 'GET'])
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def edit_video (videoId):
-    if request.method == 'POST':
-        req = request.get_json(force = True)
-
-        current_video = Video.query.get (int(videoId))
-        if (current_video is not None):
-
-            title = req['title']
-            description = req['description']
-            url = req ['url']
-            current_video.edit (title, description, url)
-
-            output = {'video':current_video.serialize_one(), 'status':'OK'}
-            return jsonify (output)
-
-        output = {'video':'', 'status':'video id is wrong'}
-        return jsonify (output)
-
-    output = {'video':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/editVideo/<int:videoId>' , view_func = edit_video, methods = ['POST' , 'GET'])
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def delete_video (videoId):
-
-    current_video = Video.query.get (int(videoId))
-    if (current_video is not None):
-        current_video.delete()
-        output = {'status':'OK'}
-        return jsonify (output)
-
-    output = {'status':'video id is wrong'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/deleteVideo/<int:videoId>' , view_func = delete_video)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_video (videoId):
-
-    current_video = Video.query.get (int(videoId))
-    if (current_video is not None):
-
-        output = {'video':current_video.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'video':'', 'status':'video id is wrong'}
-    return jsonify (output)
-
-
-admin.add_url_rule('/api/getVideo/<int:videoId>' , view_func = get_video)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_all_videos ():
-
-    videos = Video.query.all()
-
-    output = {'videos': Video.serialize_many(videos), 'status':'OK'}
-    return jsonify(output)
-
-admin.add_url_rule('/api/getAllVideos/' , view_func = get_all_videos)
-
-#------------------------------------------------------#
-#Book APIs
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def add_book ():
-    if request.method == 'POST':
-        req = request.get_json(force = True)
-
-        title = req['title']
-        description = req['description']
-        url = req['url']
-
-        new_book = Book (title, description, url)
-        new_book.save()
-
-        output = {'book':new_book.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'book':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/addBook' , view_func = add_book, methods = ['POST' , 'GET'])
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def edit_book (bookId):
-    if request.method == 'POST':
-        req = request.get_json(force = True)
-
-        current_book = Book.query.get (int(bookId))
-        if (current_book is not None):
-
-            title = req['title']
-            description = req['description']
-            url = req ['url']
-            current_book.edit (title, description, url)
-
-            output = {'book':current_book.serialize_one(), 'status':'OK'}
-            return jsonify (output)
-
-        output = {'book':'', 'status':'book id is wrong'}
-        return jsonify (output)
-
-    output = {'book':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/editBook/<int:bookId>' , view_func = edit_book, methods = ['POST' , 'GET'])
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def delete_book (bookId):
-
-    current_book = Book.query.get (int(bookId))
-    if (current_book is not None):
-        current_book.delete()
-        output = {'status':'OK'}
-        return jsonify (output)
-
-    output = {'status':'book id is wrong'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/deleteBook/<int:bookId>' , view_func = delete_book)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_book (bookId):
-
-    current_book = Book.query.get (int(bookId))
-    if (current_book is not None):
-
-        output = {'book':current_book.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'book':'', 'status':'book id is wrong'}
-    return jsonify (output)
-
-
-admin.add_url_rule('/api/getBook/<int:bookId>' , view_func = get_book)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_all_books ():
-
-    books = Book.query.all()
-
-    output = {'books': Book.serialize_many(books), 'status':'OK'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/getAllBooks/' , view_func = get_all_books)
-
-#------------------------------------------------------#
-#Podcast APIs
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def add_podcast ():
-    if request.method == 'POST':
-        req = request.get_json(force = True)
-
-        title = req['title']
-        description = req['description']
-        url = req['url']
-
-        new_podcast = Podcast (title, description, url)
-        new_podcast.save()
-
-        output = {'podcast':new_podcast.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'podcast':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/addPodcast' , view_func = add_podcast, methods = ['POST' , 'GET'])
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def edit_podcast (podcastId):
-    if request.method == 'POST':
-        req = request.get_json(force = True)
-
-        current_podcast = Podcast.query.get (int(podcastId))
-        if (current_podcast is not None):
-
-            title = req['title']
-            description = req['description']
-            url = req ['url']
-            current_podcast.edit (title, description, url)
-
-            output = {'podcast':current_podcast.serialize_one(), 'status':'OK'}
-            return jsonify (output)
-
-        output = {'podcast':'', 'status':'podcast id is wrong'}
-        return jsonify (output)
-
-    output = {'podcast':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/editPodcast/<int:podcastId>' , view_func = edit_podcast, methods = ['POST' , 'GET'])
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def delete_podcast (podcastId):
-
-    current_podcast = Podcast.query.get (int(podcastId))
-    if (current_podcast is not None):
-        current_podcast.delete()
-        output = {'status':'OK'}
-        return jsonify (output)
-
-    output = {'status':'podcast id is wrong'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/deletePodcast/<int:podcastId>' , view_func = delete_podcast)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_podcast (podcastId):
-
-    current_podcast = Podcast.query.get (int(podcastId))
-    if (current_podcast is not None):
-
-        output = {'podcast':current_podcast.serialize_one(), 'status':'OK'}
-        return jsonify (output)
-
-    output = {'podcast':'', 'status':'podcast id is wrong'}
-    return jsonify (output)
-
-
-admin.add_url_rule('/api/getPodcast/<int:podcastId>' , view_func = get_podcast)
-
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def get_all_podcasts ():
-
-    podcasts = Podcast.query.all()
-
-    output = {'podcasts': Podcast.serialize_many(podcasts), 'status':'OK'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/getAllPodcasts/' , view_func = get_all_podcasts)
-
-#------------------------------------------------------#
-#Category APIs
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
 def add_category ():
     if request.method == 'POST':
-        req = request.get_json(force = True)
 
-        name = req['name']
+        name = request.form['name']
 
-        new_category = Category (name)
-        new_category.save()
+        new_cat = Category (name)
+        new_cat.save()
 
-        output = {'category':new_category.serialize_one(), 'status':'OK'}
-        return jsonify (output)
+        flash ('دسته بندی با موفقیت اضافه شد')
+        return redirect (url_for('admin.show_categories', page_num = 1))
 
-    output = {'category':'', 'status':'method is not POST'}
-    return jsonify (output)
-
+    return redirect (url_for('admin.show_categories', page_num = 1))
 admin.add_url_rule('/api/addCategory' , view_func = add_category, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def edit_category (categoryId):
-    if request.method == 'POST':
-        req = request.get_json(force = True)
+def update_category (categoryId):
+    category = Category.query.get (categoryId)
+    if category:
+        return render_template ('editCategory.html', category = category)
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/updateCategory/<int:categoryId>' , view_func = update_category)
 
-        current_category = Category.query.get (int(categoryId))
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def edit_category ():
+    if request.method == 'POST':
+        categoryId = int(request.form ['category_id'])
+        current_category = Category.query.get (categoryId)
         if (current_category is not None):
 
-            name = req['name']
+            name = request.form['name']
             current_category.edit (name)
 
-            output = {'category':current_category.serialize_one(), 'status':'OK'}
-            return jsonify (output)
+            flash ('تغییر با موفقیت انجام شد')
+            return redirect (url_for('admin.show_categories', page_num = 1))
 
-        output = {'category':'', 'status':'category id is wrong'}
-        return jsonify (output)
+        flash ('دسته بندی اشتباه است')
+        return redirect (url_for('admin.show_categories', page_num = 1))
 
-    output = {'category':'', 'status':'method is not POST'}
-    return jsonify (output)
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/api/editCategory' , view_func = edit_category, methods = ['POST' , 'GET'])
 
-admin.add_url_rule('/api/editCategory/<int:categoryId>' , view_func = edit_category, methods = ['POST' , 'GET'])
+#---------------------------------------------------------------------------#
+# Subcategory Views #
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def show_subcategories (categoryId, page_num):
+    category = Category.query.get(categoryId)
+    if category:
+        subcategories = SubCategory.query.filter_by(category_id = categoryId)\
+        .paginate (per_page = 8, page = page_num, error_out = True)
+        return (render_template ('subcategories.html', subcategories = subcategories, category = category))
+
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/subcategories/<int:categoryId>/<int:page_num>' , view_func = show_subcategories)
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def delete_category (categoryId):
-
-    current_category = Category.query.get (int(categoryId))
-    if (current_category is not None):
-        current_category.delete()
-        output = {'status':'OK'}
-        return jsonify (output)
-
-    output = {'status':'category id is wrong'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/deleteCategory/<int:categoryId>' , view_func = delete_category)
-
-#----------------------------------------------------------------------#
-
-@cross_origin(supports_credentials=True)
-@login_required
-@admin_required
-def add_subcategory (categoryId):
+def delete_subcategory ():
     if request.method == 'POST':
-        req = request.get_json(force = True)
-        if (Category.query.get(int(categoryId))):
+        pw = request.form ['password']
+        subcategoryId = int(request.form ['subcategory_id'])
+        category_id = int(request.form ['category_id'])
+        user = User.query.get (session['user_id'])
+        if (user.check_password (pw)):
+            current_subcategory = SubCategory.query.get (subcategoryId)
+            if (current_subcategory is not None):
+                current_subcategory.delete()
+                flash ("زیر دسته بندی با موفقیت حذف شد")
+                return redirect (url_for('admin.show_subcategories', categoryId = category_id, page_num = 1))
 
-            new_subcategory = SubCategory (req['name'], req['url'], int(categoryId))
-            new_subcategory.save()
+            flash ("زیر دسته بندی اشتباه است")
+            return redirect (url_for('admin.show_subcategories', categoryId = category_id, page_num = 1))
 
-            output = {'subcategory':new_subcategory.serialize_one(), 'status':'OK'}
-            return jsonify (output)
+        flash ('گذرواژه اشتباه است')
+        return redirect (url_for('admin.show_subcategories', categoryId = category_id, page_num = 1))
 
-        output = {'subcategory':'', 'status': 'category id is wrong'}
-        return jsonify (output)
-
-    output = {'subcategory':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/addSubcategory/<int:categoryId>' , view_func = add_subcategory, methods = ['POST' , 'GET'])
+    return redirect (url_for('admin.show_subcategories', categoryId = category_id, page_num = 1))
+admin.add_url_rule('/deleteSubcategory' , view_func = delete_subcategory, methods = ['POST' , 'GET'])
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def edit_subcategory (subcategoryId):
-    if request.method == 'POST':
-        req = request.get_json(force = True)
-        subcategory = SubCategory.query.get (int(subcategoryId))
+def new_subcategory (categoryId):
+    category = Category.query.get (categoryId)
+    if category:
+        return render_template ('newSubcategory.html', category = category)
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/newSubategory/<int:categoryId>' , view_func = new_subcategory)
 
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def add_subcategory ():
+    if request.method == 'POST':
+        req = request.files
+        categoryId = int(request.form ['category_id'])
+        category = Category.query.get (categoryId)
+
+        if category:
+            if req:
+                image = request.files ['image']
+                if image.filename == '':
+                    flash ('لطفا فایل ارسالی را انتخاب نمایید')
+                    return redirect (url_for ('admin.new_subcategory', categoryId = categoryId))
+
+                if allowed_media ('image', image.filename):
+                    filename = secure_filename(image.filename)
+                    saving_path = current_app.config['IMAGE_UPLOADS'] + filename
+                    if (os.path.exists(saving_path)):
+                        flash ('لطفا نام فایل را تغییر دهید')
+                        return redirect (url_for ('admin.new_subcategory', categoryId = categoryId))
+                    image.save (saving_path)
+                    name = request.form['name']
+                    new_subcat = SubCategory (name, filename, categoryId)
+                    new_subcat.save()
+
+                    flash ('زیر دسته بندی با موفقیت اضافه شد')
+                    return redirect (url_for('admin.show_subcategories', categoryId = categoryId, page_num = 1))
+
+                else:
+                    flash ('فایل ارسالی مجاز نمی باشد')
+                    return redirect (url_for ('admin.new_subcategory', categoryId = categoryId))
+
+            flash ('لطفا فایل ارسالی را انتخاب کنید')
+            return redirect (url_for ('admin.new_subcategory', categoryId = categoryId))
+
+
+
+        flash ('دسته بندی اشتباه است')
+        return redirect (url_for('admin.show_categories', page_num = 1))
+
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/addSubcategory' , view_func = add_subcategory, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def update_subcategory (categoryId, subcategoryId):
+    category = Category.query.get (categoryId)
+    if category:
+        subcategory = SubCategory.query.get(subcategoryId)
         if subcategory:
-            name = req['name']
-            icon = req.get('url')
-            subcategory.edit (name, icon)
+            return render_template ('editSubcategory.html', category = category, subcategory = subcategory)
 
-            output = {'subcategory':subcategory.serialize_one(), 'status':'OK'}
-            return jsonify (output)
+        flash ('زیر دسته بندی اشتباه هست')
+        return redirect (url_for('admin.show_subcategories', categoryId = categoryId, page_num = 1))
 
-        output = {'subcategory':'', 'status': 'subcategory id is wrong'}
-        return jsonify (output)
-
-    output = {'subcategory':'', 'status':'method is not POST'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/editSubcategory/<int:subcategoryId>' , view_func = edit_subcategory, methods = ['POST' , 'GET'])
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/updateCategory/<int:categoryId>/<int:subcategoryId>' , view_func = update_subcategory)
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def delete_subcategory (subcategoryId):
+def edit_subcategory ():
+    if request.method == 'POST':
+        req = request.files
+        categoryId = int(request.form ['category_id'])
+        subcategoryId = int (request.form['subcategory_id'])
+        current_category = Category.query.get (categoryId)
+        current_subcategory = SubCategory.query.get (subcategoryId)
+        if (current_category is not None):
+            if (current_subcategory is not None):
+                if req:
+                    image = request.files ['image']
+                    if image.filename == '':
+                        flash ('لطفا فایل ارسالی را انتخاب نمایید')
+                        return redirect (url_for ('admin.update_subcategory', categoryId = categoryId,\
+                         subcategoryId = subcategoryId))
 
-    current_subcategory = SubCategory.query.get (int(subcategoryId))
-    if (current_subcategory is not None):
-        current_subcategory.delete()
-        output = {'status':'OK'}
-        return jsonify (output)
+                    if allowed_media ('image', image.filename):
+                        filename = secure_filename(image.filename)
+                        saving_path = current_app.config['IMAGE_UPLOADS'] + filename
+                        if (os.path.exists(saving_path)):
+                            flash ('لطفا نام فایل را تغییر دهید')
+                            return redirect (url_for ('admin.update_subcategory', categoryId = categoryId,\
+                             subcategoryId = subcategoryId))
+                        image.save (saving_path)
+                        name = request.form['name']
+                        current_subcategory.edit (name, filename)
 
-    output = {'status':'subcategory id is wrong'}
-    return jsonify (output)
+                        flash ('زیر دسته بندی با موفقیت ویرایش شد')
+                        return redirect (url_for('admin.show_subcategories', categoryId = categoryId, page_num = 1))
 
-admin.add_url_rule('/api/deleteSubcategory/<int:subcategoryId>' , view_func = delete_subcategory)
+                    else:
+                        flash ('فایل ارسالی مجاز نمی باشد')
+                        return redirect (url_for ('admin.update_subcategory', categoryId = categoryId,\
+                         subcategoryId = subcategoryId))
+
+                flash ('لطفا فایل ارسالی را انتخاب کنید')
+                return redirect (url_for ('admin.update_subcategory', categoryId = categoryId,\
+                 subcategoryId = subcategoryId))
+
+            flash ('زیر دسته بندی اشتباه است')
+            return redirect (url_for('admin.show_subcategories', categoryId = categoryId, page_num = 1))
+
+        flash ('دسته بندی اشتباه است')
+        return redirect (url_for('admin.show_categories', page_num = 1))
+
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/editSubcategory' , view_func = edit_subcategory, methods = ['POST' , 'GET'])
+
+#------------------------------------------------------------------------------#
+# Motivation Views #
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def show_motivations (categoryId, subcategoryId, page_num):
+    category = Category.query.get(categoryId)
+    if category:
+        subcategory = SubCategory.query.get (subcategoryId)
+        if subcategory:
+            motivations = Motivation.query.filter_by(subcategory_id = subcategoryId)\
+            .paginate (per_page = 8, page = page_num, error_out = True)
+
+            return (render_template ('motivations.html', motivations = motivations,\
+             subcategory = subcategory, category = category))
+
+        flash ('زیر دسته بندی اشتباه است')
+        return redirect (url_for('admin.show_subcategories', categoryId = categoryId, page_num = 1))
+
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/motivations/<int:categoryId>/<int:subcategoryId>/<int:page_num>' , view_func = show_motivations)
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def get_subcategory(subcategoryId):
-    subcategory = SubCategory.query.get (int(subcategoryId))
-    if (subcategory is not None):
+def delete_motivation ():
+    if request.method == 'POST':
+        pw = request.form ['password']
+        subcategoryId = int(request.form ['subcategory_id'])
+        category_id = int(request.form ['category_id'])
+        motivation_id = int (request.form ['motivation_id'])
+        user = User.query.get (session['user_id'])
+        if (user.check_password (pw)):
+            current_motivation = Motivation.query.get (motivation_id)
+            if (current_motivation is not None):
+                current_motivation.delete()
+                flash ("پیام با موفقیت حذف شد")
+                return redirect (url_for('admin.show_motivations', categoryId = category_id,\
+                 subcategoryId = subcategoryId, page_num = 1))
 
-        output = {'subcategory':subcategory.serialize_one(), 'status':'OK'}
-        return jsonify (output)
+            flash ("لطفا پیام را به درستی انتخاب نمایید")
+            return redirect (url_for('admin.show_motivations', categoryId = category_id,\
+             subcategoryId = subcategoryId, page_num = 1))
 
-    output = {'subcategory':'', 'status':'subcategory id is wrong'}
-    return jsonify (output)
+        flash ('گذرواژه اشتباه است')
+        return redirect (url_for('admin.show_motivations', categoryId = category_id,\
+         subcategoryId = subcategoryId, page_num = 1))
 
-admin.add_url_rule('/api/getSubcategory/<int:subcategoryId>' , view_func = get_subcategory)
+    return redirect (url_for('admin.show_motivations', categoryId = category_id,\
+     subcategoryId = subcategoryId, page_num = 1))
+admin.add_url_rule('/deleteMotivation' , view_func = delete_motivation, methods = ['POST' , 'GET'])
 
 
-#----------------------------------------------------------------------#
+
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def asynchronous_update_reserve_list ():
+def new_motivation (categoryId, subcategoryId):
+    category = Category.query.get (categoryId)
+    subcategory = SubCategory.query.get(subcategoryId)
+    if category:
+        if (subcategory and subcategory.category_id == categoryId):
+            return render_template ('newMotivation.html', category = category, subcategory = subcategory)
+        flash ('زیر دسته بندی اشتباه است')
+        return redirect (url_for('admin.show_subcategories', categoryId = categoryId, page_num = 1))
 
-    User.update_reserve_motivations()
-    output = {'status':'OK'}
-    return jsonify (output)
-
-admin.add_url_rule('/api/asyncReserveUpdate' , view_func = asynchronous_update_reserve_list)
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/newMotivation/<int:categoryId>/<int:subcategoryId>' , view_func = new_motivation)
 
 
 @cross_origin(supports_credentials=True)
 @login_required
 @admin_required
-def asynchronous_update_to_show_list ():
+def add_motivation ():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form ['description']
+        subcategory_id = request.form ['subcategory_id']
+        category_id = request.form ['category_id']
 
-    User.update_to_show_motivations()
-    output = {'status':'OK'}
-    return jsonify (output)
+        new_motiv = Motivation (description, subcategory_id, title = title)
+        new_motiv.save()
 
-admin.add_url_rule('/api/asyncToShowUpdate' , view_func = asynchronous_update_to_show_list)
+        flash ('پیام با موفقیت اضافه شد')
+        return redirect (url_for('admin.show_motivations', categoryId = category_id,\
+         subcategoryId = subcategory_id, page_num = 1))
+
+    return redirect (url_for('admin.show_motivations', categoryId = category_id,\
+     subcategoryId = subcategory_id, page_num = 1))
+admin.add_url_rule('/addMotivation' , view_func = add_motivation, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def update_motivation (categoryId):
+    category = Category.query.get (categoryId)
+    if category:
+        return render_template ('editCategory.html', category = category)
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/updateCategory/<int:categoryId>' , view_func = update_category)
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def update_motivation (categoryId, subcategoryId, motivationId):
+    category = Category.query.get (categoryId)
+    subcategory = SubCategory.query.get(subcategoryId)
+    motivation = Motivation.query.get(motivationId)
+    if category and subcategory:
+        if motivation:
+            return render_template ('editMotivation.html', category = category,\
+            subcategory = subcategory, motivation = motivation)
+
+        flash ('لطفا پیام را به درستی انتخاب نمایید')
+        return redirect (url_for('admin.show_motivations', categoryId = categoryId,\
+        subcategoryId = subcategoryId, page_num = 1))
+
+    flash ('دسته بندی اشتباه است')
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/updateMotivation/<int:categoryId>/<int:subcategoryId>/<int:motivationId>' , view_func = update_motivation)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def edit_motivation ():
+    if request.method == 'POST':
+        categoryId = int(request.form ['category_id'])
+        subcategoryId = int (request.form['subcategory_id'])
+        motivationId = int (request.form['motivation_id'])
+
+        current_motivation = Motivation.query.get (motivationId)
+        if ((current_motivation is not None) and (current_motivation.subcategory_id==subcategoryId)):
+
+            title = request.form['title']
+            description = request.form['description']
+            current_motivation.edit (title, description)
+
+            flash ('تغییر با موفقیت انجام شد')
+            return redirect (url_for('admin.show_motivations',categoryId = categoryId,\
+             subcategoryId = subcategoryId, page_num = 1))
+
+        flash ('دسته بندی اشتباه است')
+        return redirect (url_for('admin.show_categories', page_num = 1))
+
+    return redirect (url_for('admin.show_categories', page_num = 1))
+admin.add_url_rule('/editMotivation' , view_func = edit_motivation, methods = ['POST' , 'GET'])
+
+#------------------------------------------------------------------------------#
+# Video Views #
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def show_videos (page_num):
+    videos = Video.query.paginate (per_page = 8, page = page_num, error_out = True)
+    return (render_template ('videos.html', videos = videos))
+admin.add_url_rule('/videos/<int:page_num>' , view_func = show_videos)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def delete_video (videoId):
+    video = Video.query.get (videoId)
+    pw = request.form['password']
+    user = User.query.get (session['user_id'])
+    if video:
+        if (user.check_password (pw)):
+            video.delete()
+            flash ('ویدیو با موفقیت حذف شد')
+            return redirect (url_for('admin.show_videos', page_num = 1))
+
+        flash ('لطفا پسورد را به درستی وارد نمایید')
+        return redirect (url_for('admin.show_videos', page_num = 1))
+admin.add_url_rule('/deleteVideo/<int:videoId>' , view_func = delete_video, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def new_video ():
+    return render_template ('newVideo.html')
+admin.add_url_rule('/newVideo' , view_func = new_video)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def add_video ():
+    if request.method == 'POST':
+        req = request.files
+        if req:
+            video = request.files ['video']
+            if video.filename == '':
+                flash ('لطفا فایل ارسالی را انتخاب نمایید')
+                return redirect (url_for ('admin.new_video'))
+
+            if allowed_media ('video', video.filename):
+                filename = secure_filename(video.filename)
+                saving_path = current_app.config['VIDEO_UPLOADS'] + filename
+                if (os.path.exists(saving_path)):
+                    flash ('لطفا نام فایل را تغییر دهید')
+                    return redirect (url_for ('admin.new_video'))
+                video.save (saving_path)
+                title = request.form['title']
+                description = request.form['description']
+                new_vid = Video (title, description, filename)
+                new_vid.save()
+
+                flash ('ویدیو با موفقیت اضافه شد')
+                return redirect (url_for('admin.show_videos', page_num = 1))
+
+            else:
+                flash ('فایل ارسالی مجاز نمی باشد')
+                return redirect (url_for ('admin.new_video'))
+
+        flash ('لطفا فایل ارسالی را انتخاب کنید')
+        return redirect (url_for ('admin.new_video'))
+
+    return redirect (url_for('admin.show_videos', page_num = 1))
+admin.add_url_rule('/addVideo' , view_func = add_video, methods = ['POST' , 'GET'])
+#------------------------------------------------------------------------------#
+# Book Views #
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def show_books (page_num):
+    books = Book.query.paginate (per_page = 8, page = page_num, error_out = True)
+    return (render_template ('books.html', books = books))
+admin.add_url_rule('/books/<int:page_num>' , view_func = show_books)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def delete_book (bookId):
+    book = Book.query.get (bookId)
+    pw = request.form['password']
+    user = User.query.get (session['user_id'])
+    if book:
+        if (user.check_password (pw)):
+            book.delete()
+            flash ('کتاب با موفقیت حذف شد')
+            return redirect (url_for('admin.show_books', page_num = 1))
+
+        flash ('لطفا پسورد را به درستی وارد نمایید')
+        return redirect (url_for('admin.show_books', page_num = 1))
+admin.add_url_rule('/deleteBook/<int:bookId>' , view_func = delete_book, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def new_book ():
+    return render_template ('newBook.html')
+admin.add_url_rule('/newBook' , view_func = new_book)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def add_book ():
+    if request.method == 'POST':
+        req = request.files
+        if req:
+            book = request.files ['book']
+            if book.filename == '':
+                flash ('لطفا فایل ارسالی را انتخاب نمایید')
+                return redirect (url_for ('admin.new_book'))
+
+            if allowed_media ('document', book.filename):
+                filename = secure_filename(book.filename)
+                saving_path = current_app.config['DOCUMENT_UPLOADS'] + filename
+                if (os.path.exists(saving_path)):
+                    flash ('لطفا نام فایل را تغییر دهید')
+                    return redirect (url_for ('admin.new_book'))
+                book.save (saving_path)
+                title = request.form['title']
+                description = request.form['description']
+                new_bk = Book (title, description, filename)
+                new_bk.save()
+
+                flash ('کتاب با موفقیت افزوده شد')
+                return redirect (url_for('admin.show_books', page_num = 1))
+
+            else:
+                flash ('فایل ارسالی مجاز نمی باشد')
+                return redirect (url_for ('admin.new_book'))
+
+        flash ('لطفا فایل ارسالی را انتخاب کنید')
+        return redirect (url_for ('admin.new_book'))
+
+    return redirect (url_for('admin.show_books', page_num = 1))
+admin.add_url_rule('/addBook' , view_func = add_book, methods = ['POST' , 'GET'])
+
+#------------------------------------------------------------------------------#
+# Podcast Views #
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def show_podcasts (page_num):
+    podcasts = Podcast.query.paginate (per_page = 8, page = page_num, error_out = True)
+    return (render_template ('podcasts.html', podcasts = podcasts))
+admin.add_url_rule('/podcasts/<int:page_num>' , view_func = show_podcasts)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def delete_podcast (podcastId):
+    podcast = Podcast.query.get (podcastId)
+    pw = request.form['password']
+    user = User.query.get (session['user_id'])
+    if podcast:
+        if (user.check_password (pw)):
+            podcast.delete()
+            flash ('پادکست با موفقیت حذف شد')
+            return redirect (url_for('admin.show_podcasts', page_num = 1))
+
+        flash ('لطفا پسورد را به درستی وارد نمایید')
+        return redirect (url_for('admin.show_podcasts', page_num = 1))
+admin.add_url_rule('/deletePodcast/<int:podcastId>' , view_func = delete_podcast, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def new_podcast ():
+    return render_template ('newPodcast.html')
+admin.add_url_rule('/newPodcast' , view_func = new_podcast)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@admin_required
+def add_podcast ():
+    if request.method == 'POST':
+        req = request.files
+        if req:
+            podcast = request.files ['podcast']
+            if podcast.filename == '':
+                flash ('لطفا فایل ارسالی را انتخاب نمایید')
+                return redirect (url_for ('admin.new_podcast'))
+
+            if allowed_media ('audio', podcast.filename):
+                filename = secure_filename(podcast.filename)
+                saving_path = current_app.config['AUDIO_UPLOADS'] + filename
+                if (os.path.exists(saving_path)):
+                    flash ('لطفا نام فایل را تغییر دهید')
+                    return redirect (url_for ('admin.new_podcast'))
+                podcast.save (saving_path)
+                title = request.form['title']
+                description = request.form['description']
+                new_pod = Podcast (title, description, filename)
+                new_pod.save()
+
+                flash ('پادکست با موفقیت اضافه شد')
+                return redirect (url_for('admin.show_podcasts', page_num = 1))
+
+            else:
+                flash ('فایل ارسالی مجاز نمی باشد')
+                return redirect (url_for ('admin.new_podcast'))
+
+        flash ('لطفا فایل ارسالی را انتخاب کنید')
+        return redirect (url_for ('admin.new_podcast'))
+
+    return redirect (url_for('admin.show_podcasts', page_num = 1))
+admin.add_url_rule('/addPodcast' , view_func = add_podcast, methods = ['POST' , 'GET'])
+
+#------------------------------------------------------------------------------#
+
+@cross_origin(supports_credentials=True)
+@login_required
+@owner_required
+def show_admins(page_num):
+    admins = User.query.filter(User.role == 'admin').paginate (per_page = 8, page = page_num, error_out = True)
+    return (render_template ('admins.html', admins = admins))
+admin.add_url_rule('/admins/<int:page_num>' , view_func = show_admins)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@owner_required
+def delete_admin(adminId):
+    admin = User.query.get (adminId)
+    pw = request.form['password']
+    user = User.query.get (session['user_id'])
+    if admin:
+        if (user.check_password (pw)):
+            admin.delete()
+            flash ('ادمین با موفقیت حذف شد')
+            return redirect (url_for('admin.show_admins', page_num = 1))
+
+        flash ('لطفا پسورد را به درستی وارد نمایید')
+        return redirect (url_for('admin.show_admins', page_num = 1))
+admin.add_url_rule('/deleteAdmin/<int:adminId>' , view_func = delete_admin, methods = ['POST' , 'GET'])
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@owner_required
+def new_admin():
+    return render_template ('newAdmin.html')
+admin.add_url_rule('/newAdmin' , view_func = new_admin)
+
+
+@cross_origin(supports_credentials=True)
+@login_required
+@owner_required
+def add_admin ():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form ['email']
+        password = request.form ['password']
+
+        if (User.query_by_email (email) is not None):
+            flash ('کاربر تکراری است')
+            return redirect (url_for ('admin.add_admin'))
+
+        if not (re.search ('^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$', email)):
+            flash ('ایمیل را به درستی وارد نمایید')
+            return redirect (url_for ('admin.add_admin'))
+
+        new_user = User (name, email, password, role = 'admin')
+        new_user.save()
+
+        flash ('ثبت نام با موفقیت انجام شد')
+        return redirect (url_for ('admin.show_admins', page_num = 1))
+
+    return redirect (url_for ('admin.admin_profile'))
+
+admin.add_url_rule('/api/addAdmin' , view_func = add_admin, methods = ['POST' , 'GET'])

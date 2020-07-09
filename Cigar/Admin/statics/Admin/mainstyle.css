@@ -1,0 +1,96 @@
+@font-face {
+  font-family: Mitra;
+  src: url('B_Mitra.ttf')
+}
+@font-face {
+  font-family: Tabassom;
+  src: url('B_Tabassom.ttf');
+}
+.navbar-brand2 {
+  transform: translateX(-50%);
+  left: 50%;
+  position: absolute;
+}
+nav {
+  font-family: 'Mitra';
+}
+#introduction,#advertisers,#viewers {
+  font-family: 'B Tabassom';
+}
+.container-fluid {
+  width: 100%;
+  margin-top: 0px;
+  padding: 0px 0px;
+}
+.container {
+  /* width: 100%; */
+  padding-top: 0px;
+}
+.back-img {
+  background-image: url('pic2.jpg');
+  /* background-size: 100% 100%; */
+  min-height: 853px;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding-bottom: 0px;
+
+}
+.back-img h1 {
+  padding-top: 10px;
+}
+.header-img {
+  background-image: url('pic2.jpg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+}
+.navbar {
+  margin-bottom: 0px;
+  border-bottom: 0px;
+  padding-bottom: 0px;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+.title {
+  font-size: 200%;
+  font-family:'Mitra';
+}
+
+.modal-header, h4, .close {
+    background-color: #333;
+    color: #fff !important;
+    text-align: center;
+    font-family: 'Mitra';
+
+}
+.modal-body {
+  font-family: 'Mitra';
+  padding: 40px 50px;
+}
+
+.btn {
+    padding: 10px 20px;
+    background-color: #333;
+    color: #f1f1f1;
+    border-radius: 0;
+    transition: .2s;
+}
+.btn:hover, .btn:focus {
+    border: 1px solid #333;
+    background-color: #fff;
+    color: #000;
+}
+.explanation {
+  padding: 20px 0;
+}
+.viewersdef button {
+  float: left;
+}
+@media screen and (min-width: 800px){
+  .viewersdef {
+    margin-top: 10%;
+  }
+}
